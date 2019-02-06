@@ -26,19 +26,13 @@ from pymongo import operations
 from pymongo.command_cursor import CommandCursor
 from pymongo.cursor import Cursor
 from pymongo.results import _WriteResult, BulkWriteResult
-from pymongo.operations import (InsertOne,
-                                DeleteOne,
-                                DeleteMany,
-                                ReplaceOne,
-                                UpdateOne,
-                                UpdateMany)
 
 from test import unittest, client_context, IntegrationTest
 from test.utils import OvertCommandListener, drop_collections, rs_client
 
 # Location of JSON test specifications.
 _TEST_PATH = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'crud_newfmt')
+    os.path.dirname(os.path.realpath(__file__)), 'crud_newformat')
 
 
 def camel_to_snake(camel):
@@ -180,13 +174,6 @@ class TestAllScenarios(IntegrationTest):
                     if actual_time is not None:
                         expected_read_concern['afterClusterTime'] = actual_time
 
-            # # Replace lsid with a name like "session0" to match test.
-            # if 'lsid' in event.command:
-            #     for name, lsid in session_ids.items():
-            #         if event.command['lsid'] == lsid:
-            #             event.command['lsid'] = name
-            #             break
-
             for attr, expected in expectation[event_type].items():
                 actual = getattr(event, attr)
                 if isinstance(expected, dict):
@@ -295,56 +282,6 @@ def create_tests():
 
 create_tests()
 
-
-class TestWriteOpsComparison(unittest.TestCase):
-    def test_InsertOneEquals(self):
-        self.assertEqual(InsertOne({'foo': 42}), InsertOne({'foo': 42}))
-
-    def test_InsertOneNotEquals(self):
-        self.assertNotEqual(InsertOne({'foo': 42}), InsertOne({'foo': 23}))
-
-    def test_DeleteOneEquals(self):
-        self.assertEqual(DeleteOne({'foo': 42}), DeleteOne({'foo': 42}))
-
-    def test_DeleteOneNotEquals(self):
-        self.assertNotEqual(DeleteOne({'foo': 42}), DeleteOne({'foo': 23}))
-
-    def test_DeleteManyEquals(self):
-        self.assertEqual(DeleteMany({'foo': 42}), DeleteMany({'foo': 42}))
-
-    def test_DeleteManyNotEquals(self):
-        self.assertNotEqual(DeleteMany({'foo': 42}), DeleteMany({'foo': 23}))
-
-    def test_DeleteOneNotEqualsDeleteMany(self):
-        self.assertNotEqual(DeleteOne({'foo': 42}), DeleteMany({'foo': 42}))
-
-    def test_ReplaceOneEquals(self):
-        self.assertEqual(ReplaceOne({'foo': 42}, {'bar': 42}, upsert=False),
-                         ReplaceOne({'foo': 42}, {'bar': 42}, upsert=False))
-
-    def test_ReplaceOneNotEquals(self):
-        self.assertNotEqual(ReplaceOne({'foo': 42}, {'bar': 42}, upsert=False),
-                            ReplaceOne({'foo': 42}, {'bar': 42}, upsert=True))
-
-    def test_UpdateOneEquals(self):
-        self.assertEqual(UpdateOne({'foo': 42}, {'$set': {'bar': 42}}),
-                         UpdateOne({'foo': 42}, {'$set': {'bar': 42}}))
-
-    def test_UpdateOneNotEquals(self):
-        self.assertNotEqual(UpdateOne({'foo': 42}, {'$set': {'bar': 42}}),
-                            UpdateOne({'foo': 42}, {'$set': {'bar': 23}}))
-
-    def test_UpdateManyEquals(self):
-        self.assertEqual(UpdateMany({'foo': 42}, {'$set': {'bar': 42}}),
-                         UpdateMany({'foo': 42}, {'$set': {'bar': 42}}))
-
-    def test_UpdateManyNotEquals(self):
-        self.assertNotEqual(UpdateMany({'foo': 42}, {'$set': {'bar': 42}}),
-                            UpdateMany({'foo': 42}, {'$set': {'bar': 23}}))
-
-    def test_UpdateOneNotEqualsUpdateMany(self):
-        self.assertNotEqual(UpdateOne({'foo': 42}, {'$set': {'bar': 42}}),
-                            UpdateMany({'foo': 42}, {'$set': {'bar': 42}}))
 
 if __name__ == "__main__":
     unittest.main()
