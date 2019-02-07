@@ -145,13 +145,12 @@ class TestAllScenarios(IntegrationTest):
                 return result == expected_result
 
     def check_events(self, expected_events, listener):
-        # import ipdb; ipdb.set_trace()
         res = listener.results
         if not len(expected_events):
             return
 
         # Expectations only have CommandStartedEvents.
-        assert len(res['started']) == len(expected_events)
+        self.assertEqual(len(res['started']), len(expected_events))
         for i, expectation in enumerate(expected_events):
             event_type = next(iter(expectation))
             event = res['started'][i]
@@ -162,6 +161,12 @@ class TestAllScenarios(IntegrationTest):
                 event.command['getMore'] = 42
             elif event.command_name == 'killCursors':
                 event.command['cursors'] = [42]
+            # Add upsert and multi fields back into expectations.
+            elif event.command_name == 'update':
+                updates = expectation[event_type]['command']['updates']
+                for update in updates:
+                    update.setdefault('upsert', False)
+                    update.setdefault('multi', False)
 
             # Replace afterClusterTime: 42 with actual afterClusterTime.
             expected_cmd = expectation[event_type]['command']
