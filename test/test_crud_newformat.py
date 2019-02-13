@@ -34,6 +34,10 @@ from test.utils import OvertCommandListener, drop_collections, rs_client
 _TEST_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), 'crud_newformat')
 
+# Default test database and collection names.
+TEST_DB = 'testdb'
+TEST_COLLECTION = 'testcollection'
+
 
 def camel_to_snake(camel):
     # Regex to convert CamelCase to snake_case.
@@ -96,9 +100,12 @@ class TestAllScenarios(IntegrationTest):
                         arguments[c2s] = arguments.pop(arg_name)
 
             result = cmd(**arguments)
-            self.check_result(opdef['result'], result)
+            self.check_result(opdef.get('result'), result)
 
     def check_result(self, expected_result, result):
+        if expected_result is None:
+            return True
+
         if isinstance(result, Cursor) or isinstance(result, CommandCursor):
             return list(result) == expected_result
 
@@ -220,9 +227,11 @@ def create_test(scenario_def, test):
         self.addCleanup(client.close)
 
         # Get database and collection objects.
-        database = getattr(client, scenario_def['database_name'])
+        database = getattr(
+            client, scenario_def.get('database_name', TEST_DB))
         drop_collections(database)
-        collection = getattr(database, scenario_def['collection_name'])
+        collection = getattr(
+            database, scenario_def.get('collection_name', TEST_COLLECTION))
 
         # Populate collection with data and run test.
         collection.insert_many(scenario_def['data'])
