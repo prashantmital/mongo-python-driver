@@ -146,19 +146,12 @@ class TestFallbackEncoder(unittest.TestCase):
 
         # expect an error when encoding a custom type.
         document = {'average': Decimal('56.47')}
-        err_msg = ("cannot convert value of type <class 'decimal.Decimal'> to "
-                   "bson\nduring fallback encoding the following exception "
-                   "was raised:\nZeroDivisionError.*")
-        with self.assertRaisesRegex(InvalidDocument, err_msg):
+        with self.assertRaises(InvalidDocument):
             BSON().encode(document, codec_options=codecopts)
 
     def test_unencodable_type(self):
         document = {'average': Decimal}
-        err_msg = ("cannot convert value of type <class 'type'> to "
-                   "bson\nduring fallback encoding the following exception "
-                   "was raised:\nTypeError\(\"Cannot convert "
-                   "<class 'decimal\.Decimal'> to Decimal128\"\)")
-        with self.assertRaisesRegex(InvalidDocument, err_msg):
+        with self.assertRaises(InvalidDocument):
             BSON().encode(document, codec_options=self.codecopts)
 
 
