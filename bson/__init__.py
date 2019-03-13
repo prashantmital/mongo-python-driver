@@ -795,14 +795,8 @@ def _name_value_to_bson(name, value, check_keys, opts):
     # provided one.
     fallback_encoder = opts.type_registry._fallback_encoder
     if fallback_encoder is not None:
-        try:
-            value = fallback_encoder(value)
-        except Exception as exc:
-            err_msg += ("\nduring fallback encoding the following exception "
-                        "was raised:\n%r" % (exc,))
-            raise InvalidDocument(err_msg)
         return _name_value_to_bson(
-            name, value, check_keys, opts)
+            name, fallback_encoder(value), check_keys, opts)
 
     raise InvalidDocument(err_msg)
 

@@ -116,28 +116,21 @@ class TestCustomPythonTypeToBSON(unittest.TestCase):
 
 
 class TestFallbackEncoder(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        def fallback_encoder(value):
-            return Decimal128(value)
-
+    def _get_codec_options(self, fallback_encoder):
         type_registry = TypeRegistry(fallback_encoder=fallback_encoder)
-        codec_options = CodecOptions(type_registry=type_registry)
-        cls.codecopts = codec_options
+        return CodecOptions(type_registry=type_registry)
 
     def test_simple(self):
+        codecopts = self._get_codec_options(lambda x: Decimal128(x))
         document = {'average': Decimal('56.47')}
-        bsonbytes = BSON().encode(document, codec_options=self.codecopts)
+        bsonbytes = BSON().encode(document, codec_options=codecopts)
 
         exp_document = {'average': Decimal128('56.47')}
-        exp_bsonbytes = BSON().encode(
-            exp_document, codec_options=self.codecopts)
+        exp_bsonbytes = BSON().encode(exp_document)
         self.assertEqual(bsonbytes, exp_bsonbytes)
 
-    def test_bad_encoder(self):
-        fb_encoder = lambda x: 1/0
-        type_registry = TypeRegistry(fallback_encoder=fb_encoder)
-        codecopts = CodecOptions(type_registry=type_registry)
+    def test_erroring_fallback_encoder(self):
+        codecopts = self._get_codec_options(lambda _: 1/0)
 
         # fallback converter should not be invoked when encoding known types.
         BSON().encode(
@@ -146,14 +139,25 @@ class TestFallbackEncoder(unittest.TestCase):
 
         # expect an error when encoding a custom type.
         document = {'average': Decimal('56.47')}
+        with self.assertRaises(ZeroDivisionError):
+            BSON().encode(document, codec_options=codecopts)
+
+    def test_noop_fallback_encoder(self):
+        codecopts = self._get_codec_options(lambda x: x)
+        document = {'average': Decimal('56.47')}
         with self.assertRaises(InvalidDocument):
             BSON().encode(document, codec_options=codecopts)
 
-    def test_unencodable_type(self):
+    def test_type_unencodable_by_fallback_encoder(self):
+        def fallback_encoder(value):
+            try:
+                return Decimal128(value)
+            except:
+                raise TypeError("cannot encode type %s" % (type(value)))
+        codecopts = self._get_codec_options(fallback_encoder)
         document = {'average': Decimal}
-        with self.assertRaises(InvalidDocument):
-            BSON().encode(document, codec_options=self.codecopts)
-
+        with self.assertRaises(TypeError):
+            BSON().encode(document, codec_options=codecopts)
 
 
 if __name__ == "__main__":
