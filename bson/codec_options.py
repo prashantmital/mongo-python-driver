@@ -74,10 +74,20 @@ class TypeRegistry(object):
     If multiple codecs try to transform a single python or BSON type,
     the transformation described by the last type codec prevails.
     """
-    def __init__(self, *type_codecs):
+    def __init__(self, *type_codecs, **kwargs):
         self.__args = type_codecs
+        self.__kwargs = kwargs
+        self._fallback_encoder = None
         self._encoder_map = {}
         self._decoder_map = {}
+
+        fallback_encoder = kwargs.get('fallback_encoder')
+        if fallback_encoder is not None:
+            if not callable(fallback_encoder):
+                raise ValueError(
+                    "fallback_encoder must be a callable")
+            self._fallback_encoder = fallback_encoder
+
         for codec in type_codecs:
             if not isinstance(codec, TypeCodecBase):
                 raise TypeError(

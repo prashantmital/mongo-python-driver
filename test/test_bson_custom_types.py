@@ -29,6 +29,7 @@ from bson import (BSON,
                   _dict_to_bson,
                   _bson_to_dict)
 from bson.codec_options import CodecOptions, TypeCodecBase, TypeRegistry
+from bson.errors import InvalidDocument
 
 from test import unittest
 
@@ -112,6 +113,53 @@ class TestCustomPythonTypeToBSON(unittest.TestCase):
             self.assertEqual(expected_doc, decoded_doc)
 
         fileobj.close()
+
+
+class TestFallbackEncoder(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        def fallback_encoder(value):
+            return Decimal128(value)
+
+        type_registry = TypeRegistry(fallback_encoder=fallback_encoder)
+        codec_options = CodecOptions(type_registry=type_registry)
+        cls.codecopts = codec_options
+
+    def test_simple(self):
+        document = {'average': Decimal('56.47')}
+        bsonbytes = BSON().encode(document, codec_options=self.codecopts)
+
+        exp_document = {'average': Decimal128('56.47')}
+        exp_bsonbytes = BSON().encode(
+            exp_document, codec_options=self.codecopts)
+        self.assertEqual(bsonbytes, exp_bsonbytes)
+
+    def test_bad_encoder(self):
+        fb_encoder = lambda x: 1/0
+        type_registry = TypeRegistry(fallback_encoder=fb_encoder)
+        codecopts = CodecOptions(type_registry=type_registry)
+
+        # fallback converter should not be invoked when encoding known types.
+        BSON().encode(
+            {'a': 1, 'b': Decimal128('1.01'), 'c': {'arr': ['abc', 3.678]}},
+            codec_options=codecopts)
+
+        # expect an error when encoding a custom type.
+        document = {'average': Decimal('56.47')}
+        err_msg = ("cannot convert value of type <class 'decimal.Decimal'> to "
+                   "bson\nduring fallback encoding the following exception "
+                   "was raised:\nZeroDivisionError.*")
+        with self.assertRaisesRegex(InvalidDocument, err_msg):
+            BSON().encode(document, codec_options=codecopts)
+
+    def test_unencodable_type(self):
+        document = {'average': Decimal}
+        err_msg = ("cannot convert value of type <class 'type'> to "
+                   "bson\nduring fallback encoding the following exception "
+                   "was raised:\nTypeError\(\"Cannot convert "
+                   "<class 'decimal\.Decimal'> to Decimal128\"\)")
+        with self.assertRaisesRegex(InvalidDocument, err_msg):
+            BSON().encode(document, codec_options=self.codecopts)
 
 
 
