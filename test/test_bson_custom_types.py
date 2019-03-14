@@ -129,12 +129,6 @@ class TestFallbackEncoder(unittest.TestCase):
         exp_bsonbytes = BSON().encode(exp_document)
         self.assertEqual(bsonbytes, exp_bsonbytes)
 
-    def test_encoder_not_callable(self):
-        fb_encoder = 'not a callable'
-        err_msg = "Fallback encoder %r is not a callable" % (fb_encoder,)
-        with self.assertRaisesRegex(TypeError, err_msg):
-            self._get_codec_options(fallback_encoder=fb_encoder)
-
     def test_erroring_fallback_encoder(self):
         codecopts = self._get_codec_options(lambda _: 1/0)
 
