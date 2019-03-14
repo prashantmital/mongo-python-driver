@@ -53,7 +53,7 @@ class DecimalCodec(TypeCodecBase):
 class TestCustomPythonTypeToBSON(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        type_registry = TypeRegistry(DecimalCodec())
+        type_registry = TypeRegistry((DecimalCodec(),))
         codec_options = CodecOptions(type_registry=type_registry)
         cls.codecopts = codec_options
 
