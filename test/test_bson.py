@@ -958,7 +958,7 @@ class TestTypeRegistry(unittest.TestCase):
 
     def test_simple(self):
         codec_instances = [codec() for codec in self.codecs]
-        def assert_proper_initialization(type_registry):
+        def assert_proper_initialization(type_registry, codec_instances):
             self.assertEqual(type_registry._encoder_map, {
                 self.types[0]: codec_instances[0].transform_python,
                 self.types[1]: codec_instances[1].transform_python})
@@ -969,11 +969,18 @@ class TestTypeRegistry(unittest.TestCase):
                 type_registry._fallback_encoder, self.fallback_encoder)
 
         type_registry = TypeRegistry(codec_instances, self.fallback_encoder)
-        assert_proper_initialization(type_registry)
+        assert_proper_initialization(type_registry, codec_instances)
 
         type_registry = TypeRegistry(
             fallback_encoder=self.fallback_encoder, type_codecs=codec_instances)
-        assert_proper_initialization(type_registry)
+        assert_proper_initialization(type_registry, codec_instances)
+
+        # Ensure codec list held by the type registry doesn't change if we
+        # mutate the initial list.
+        codec_instances_copy = list(codec_instances)
+        codec_instances.pop(0)
+        self.assertListEqual(
+            type_registry._TypeRegistry__type_codecs, codec_instances_copy)
 
     def test_initialize_fail(self):
         err_msg = "Expected an instance of TypeCodecBase, got .* instead"

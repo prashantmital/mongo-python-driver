@@ -84,7 +84,7 @@ class TypeRegistry(object):
         encode.
     """
     def __init__(self, type_codecs=None, fallback_encoder=None):
-        self.__type_codecs = type_codecs or []
+        self.__type_codecs = list(type_codecs or [])
         self._fallback_encoder = fallback_encoder
         self._encoder_map = {}
         self._decoder_map = {}
