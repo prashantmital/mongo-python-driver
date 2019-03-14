@@ -789,8 +789,6 @@ def _name_value_to_bson(name, value, check_keys, opts):
             _ENCODERS[type(value)] = func
             return func(name, value, check_keys, opts)
 
-    err_msg = ("cannot convert value of type %s to bson" % type(value))
-
     # As a last resort, try using the fallback encoder, if the user has
     # provided one.
     fallback_encoder = opts.type_registry._fallback_encoder
@@ -798,7 +796,8 @@ def _name_value_to_bson(name, value, check_keys, opts):
         return _name_value_to_bson(
             name, fallback_encoder(value), check_keys, opts)
 
-    raise InvalidDocument(err_msg)
+    raise InvalidDocument(
+        "cannot convert value of type %s to bson" % type(value))
 
 
 def _element_to_bson(key, value, check_keys, opts):
