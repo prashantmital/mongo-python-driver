@@ -991,10 +991,11 @@ class TestTypeRegistry(unittest.TestCase):
             TypeRegistry([type('AnyType', (object,), {})()])
 
         err_msg = "Fallback encoder %r is not a callable" % (True,)
-        with self.assertRaisesRegex(ValueError, err_msg):
+        with self.assertRaisesRegex(TypeError, err_msg):
             TypeRegistry([], True)
 
-        with self.assertRaisesRegex(ValueError, err_msg):
+        err_msg = "Fallback encoder %r is not a callable" % ('hello',)
+        with self.assertRaisesRegex(TypeError, err_msg):
             TypeRegistry(fallback_encoder='hello')
 
     def test_not_implemented(self):
