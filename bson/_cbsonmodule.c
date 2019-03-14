@@ -473,7 +473,6 @@ int convert_type_registry(PyObject* registry_obj, type_registry_t* registry) {
 
     registry->fallback_encoder = PyObject_GetAttrString(registry_obj, "_fallback_encoder");
     if (registry->fallback_encoder == NULL) {
-        printf("FAIIIIL!");
         goto fail;
     }
     registry->has_fallback_encoder = (registry->fallback_encoder != Py_None);
@@ -793,7 +792,6 @@ static int _write_element_to_buffer(PyObject* self, buffer_t buffer,
      * have a _type_marker attribute, which we can switch on instead.
      */
     long type = _type_marker(value);
-
     if (type < 0) {
         return 0;
     }
