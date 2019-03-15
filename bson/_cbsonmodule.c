@@ -785,6 +785,7 @@ static int _write_element_to_buffer(PyObject* self, buffer_t buffer,
     struct module_state *state = GETSTATE(self);
     PyObject* mapping_type;
     PyObject* new_value = NULL;
+    int retval;
     PyObject* uuid_type;
     /*
      * Don't use PyObject_IsInstance for our custom types. It causes
@@ -1385,8 +1386,10 @@ static int _write_element_to_buffer(PyObject* self, buffer_t buffer,
             // propagate any exception raised by the callback
             return 0;
         }
-        return _write_element_to_buffer(self, buffer, type_byte, new_value,
-                                        check_keys, options, 1);
+        retval = _write_element_to_buffer(self, buffer, type_byte, new_value,
+                                          check_keys, options, 1);
+        Py_XDECREF(new_value);
+        return retval;
     }
     Py_XDECREF(new_value);
 
