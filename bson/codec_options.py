@@ -91,7 +91,7 @@ class TypeRegistry(object):
 
         if self._fallback_encoder is not None:
             if not callable(fallback_encoder):
-                raise TypeError("Fallback encoder %r is not a callable" % (
+                raise TypeError("fallback_encoder %r is not a callable" % (
                     fallback_encoder))
 
         for codec in self.__type_codecs:
