@@ -152,6 +152,82 @@ MongoDB:
   {u'_id': ObjectId('...'), u'num': Decimal128('45.321')}
 
 
+Encoding Subtypes
+^^^^^^^^^^^^^^^^^
+
+Consider the situation where, in addition to encoding
+:py:class:`~decimal.Decimal`, we also need to encode a type that subclasses
+``Decimal``. PyMongo does this automatically for types that inherit from
+Python types that are BSON-encodable by default, but the type codec system
+described above does not offer the same flexibility.
+
+Consider this subtype of ``Decimal`` that has a method to return its value as
+an integer:
+
+.. doctest::
+
+  >>> class DecimalInt(Decimal):
+  ...     def my_method(self):
+  ...         """Method implementing some custom logic."""
+  ...         return int(self)
+
+If we try to save an instance of this type without first registering a type
+codec for it, we get an error:
+
+.. doctest::
+
+  >>> collection.insert_one({'num': DecimalInt("45.321")})
+  Traceback (most recent call last):
+  ...
+  bson.errors.InvalidDocument: Cannot encode object: Decimal('45.321')
+
+In order to proceed further, we must define a type codec for ``DecimalInt``.
+This is trivial to do since the same transformation as the one used for
+``Decimal`` is adequate for encoding ``DecimalInt`` as well:
+
+.. doctest::
+
+  >>> class DecimalIntCodec(DecimalCodec):
+  ...     @property
+  ...     def python_type(self):
+  ...         """The Python type acted upon by this type codec."""
+  ...         return DecimalInt
+  >>> decimalint_codec = DecimalIntCodec()
+
+
+.. note::
+
+  No attempt is made to modify decoding behavior because without additional
+  information, it is impossible to discern which incoming
+  :class:`~bson.decimal128.Decimal128` value needs to be decoded as ``Decimal``
+  and which needs to be decoded as ``DecimalInt``. This example only considers
+  the situation where a user wants to *encode* documents containing one or both
+  of these types.
+
+Now, we can create a new codec options object and use it to get a collection
+object:
+
+.. doctest::
+
+  >>> type_registry = TypeRegistry([decimal_codec, decimalint_codec])
+  >>> codec_options = CodecOptions(type_registry=type_registry)
+  >>> collection = db.get_collection('test', codec_options=codec_options)
+  >>> collection.drop()
+
+
+We can now seamlessly encode instances of ``DecimalInt``. Note that the
+``transform_bson`` method of the base codec class results in these values
+being decoded as ``Decimal`` (and not ``DecimalInt``):
+
+.. doctest::
+
+  >>> collection.insert_one({'num': DecimalInt("45.321")})
+  <pymongo.results.InsertOneResult object at ...>
+  >>> mydoc = collection.find_one()
+  >>> pprint.pprint(mydoc)
+  {u'_id': ObjectId('...'), u'num': Decimal('45.321')}
+
+
 The Fallback Encoder
 --------------------
 
