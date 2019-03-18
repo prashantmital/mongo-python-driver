@@ -34,7 +34,7 @@ from bson import (BSON,
                   Regex)
 from bson.binary import Binary, UUIDLegacy
 from bson.code import Code
-from bson.codec_options import CodecOptions, TypeCodecBase, TypeRegistry
+from bson.codec_options import CodecOptions, TypeCodec, TypeRegistry
 from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.dbref import DBRef
@@ -919,7 +919,7 @@ class TestTypeRegistry(unittest.TestCase):
                 assert isinstance(x, str)
                 self.x = x
 
-        class MyIntCodec(TypeCodecBase):
+        class MyIntCodec(TypeCodec):
             @property
             def python_type(self):
                 return MyIntType
@@ -934,7 +934,7 @@ class TestTypeRegistry(unittest.TestCase):
             def transform_bson(self, value):
                 return MyIntType(value)
 
-        class MyStrCodec(TypeCodecBase):
+        class MyStrCodec(TypeCodec):
             @property
             def python_type(self):
                 return MyStrType
@@ -983,7 +983,8 @@ class TestTypeRegistry(unittest.TestCase):
             type_registry._TypeRegistry__type_codecs, codec_instances_copy)
 
     def test_initialize_fail(self):
-        err_msg = "Expected an instance of TypeCodecBase, got .* instead"
+        err_msg = ("Expected an instance of TypeEncoder, TypeDecoder, "
+                   "or TypeCodec, got .* instead")
         with self.assertRaisesRegex(TypeError, err_msg):
             TypeRegistry(self.codecs)
 
@@ -997,12 +998,6 @@ class TestTypeRegistry(unittest.TestCase):
         err_msg = "fallback_encoder %r is not a callable" % ('hello',)
         with self.assertRaisesRegex(TypeError, err_msg):
             TypeRegistry(fallback_encoder='hello')
-
-    def test_not_implemented(self):
-        type_registry = TypeRegistry([type("codec1", (TypeCodecBase, ), {})(),
-                                      type("codec2", (TypeCodecBase, ), {})()])
-        self.assertEqual(type_registry._encoder_map, {})
-        self.assertEqual(type_registry._decoder_map, {})
 
     def test_type_registry_repr(self):
         codec_instances = [codec() for codec in self.codecs]

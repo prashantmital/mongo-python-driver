@@ -28,13 +28,13 @@ from bson import (BSON,
                   decode_iter,
                   _dict_to_bson,
                   _bson_to_dict)
-from bson.codec_options import CodecOptions, TypeCodecBase, TypeRegistry
+from bson.codec_options import CodecOptions, TypeCodec, TypeRegistry
 from bson.errors import InvalidDocument
 
 from test import unittest
 
 
-class DecimalCodec(TypeCodecBase):
+class DecimalCodec(TypeCodec):
     @property
     def bson_type(self):
         return Decimal128
