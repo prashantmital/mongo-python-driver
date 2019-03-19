@@ -71,7 +71,7 @@ else:
     except ImportError:
         from StringIO import StringIO
 
-    ABC = ABCMeta('ABC', (), {})
+    ABC = ABCMeta('ABC', (object,), {})
 
     MAXSIZE = sys.maxint
 
