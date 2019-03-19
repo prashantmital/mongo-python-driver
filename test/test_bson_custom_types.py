@@ -35,22 +35,6 @@ from bson.errors import InvalidDocument
 from test import unittest
 
 
-class DecimalCodec(TypeCodec):
-    @property
-    def bson_type(self):
-        return Decimal128
-
-    @property
-    def python_type(self):
-        return Decimal
-
-    def transform_bson(self, value):
-        return value.to_decimal()
-
-    def transform_python(self, value):
-        return Decimal128(value)
-
-
 class DecimalEncoder(TypeEncoder):
     @property
     def python_type(self):
@@ -67,6 +51,10 @@ class DecimalDecoder(TypeDecoder):
 
     def transform_bson(self, value):
         return value.to_decimal()
+
+
+class DecimalCodec(DecimalDecoder, DecimalEncoder):
+    pass
 
 
 class CustomTypeTests(object):
