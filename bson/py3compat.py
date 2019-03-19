@@ -25,7 +25,8 @@ if PY3:
     from abc import ABC, abstractmethod
     from io import BytesIO as StringIO
 
-    abstractproperty = lambda func: property(abstractmethod(func))
+    def abstractproperty(func):
+        return property(abstractmethod(func))
 
     MAXSIZE = sys.maxsize
 
