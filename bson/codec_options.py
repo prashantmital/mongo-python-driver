@@ -83,10 +83,6 @@ class TypeCodec(TypeEncoder, TypeDecoder):
     pass
 
 
-TypeEncoder.register(TypeCodec)
-TypeDecoder.register(TypeCodec)
-
-
 class TypeRegistry(object):
     """Encapsulates type codecs used in encoding and / or decoding BSON, as
     well as the fallback encoder. Type registries cannot be modified after
