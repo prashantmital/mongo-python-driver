@@ -34,14 +34,13 @@ from bson import (BSON,
                   Regex)
 from bson.binary import Binary, UUIDLegacy
 from bson.code import Code
-from bson.codec_options import CodecOptions, TypeCodec, TypeRegistry
+from bson.codec_options import CodecOptions
 from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.dbref import DBRef
 from bson.py3compat import abc, iteritems, PY3, StringIO, text_type
 from bson.son import SON
 from bson.timestamp import Timestamp
-from bson.tz_util import FixedOffset
 from bson.errors import (InvalidBSON,
                          InvalidDocument,
                          InvalidStringData)
