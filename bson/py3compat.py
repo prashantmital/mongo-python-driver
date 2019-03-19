@@ -63,7 +63,7 @@ if PY3:
 else:
     import collections as abc
     import thread
-    from abc import ABCMeta, abstractmethod, abstractproperty
+    from abc import ABCMeta, abstractproperty
 
     from itertools import imap
     try:

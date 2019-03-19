@@ -16,10 +16,10 @@
 
 import datetime
 
+from abc import abstractmethod
 from collections import namedtuple
 
-from bson.py3compat import (ABC, abc, abstractmethod, abstractproperty,
-                            string_type)
+from bson.py3compat import ABC, abc, abstractproperty, string_type
 from bson.binary import (ALL_UUID_REPRESENTATIONS,
                          PYTHON_LEGACY,
                          UUID_REPRESENTATION_NAMES)
