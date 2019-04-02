@@ -215,7 +215,7 @@ def _get_array(data, position, obj_end, opts, element_name):
     end -= 1
     result = []
 
-    # Avoid doing global and attibute lookups in the loop.
+    # Avoid doing global and attribute lookups in the loop.
     append = result.append
     index = data.index
     getter = _ELEMENT_GETTER
@@ -938,6 +938,66 @@ def decode_all(data, codec_options=DEFAULT_CODEC_OPTIONS):
 
 if _USE_C:
     decode_all = _cbson.decode_all
+
+
+def _decode_selective(rawdoc, fields, codec_options):
+    doc = codec_options.document_class()
+    for key, value in iteritems(rawdoc):
+        if key in fields:
+            if fields[key] == True:
+                doc[key] = [_bson_to_dict(r.raw, codec_options) for r in value]
+            else:
+                doc[key] = _decode_selective(value, fields[key], codec_options)
+            continue
+        doc[key] = value
+    return doc
+
+
+def decode_all_custom(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None,):
+    """Decode BSON data to multiple documents while using user-provided
+    custom decoding logic.
+
+    `data` must be a string of concatenated, valid, BSON-encoded
+    documents.
+
+    :Parameters:
+      - `data`: BSON data
+      - `codec_options` (optional): An instance of
+        :class:`~bson.codec_options.CodecOptions` with user-specified type
+        decoders. If no decoders are found, this method is the same as
+        ``decode_all``.
+      - `fields` (optional): Map of document namespaces where data that needs
+        to be custom decoded lives. If ``fields`` is empty, this method is the
+        same as ``decode_all``. As an example, for custom decoding information
+        in 'field1.subfield1', this should be specified as
+        ``{'field1': {'subfield1': True}}``.
+
+    :Returns:
+      - `document_list`: List of decoded documents.
+
+    .. versionadded:: 3.8
+    """
+    if not fields or not codec_options.type_registry._decoder_map:
+        return decode_all(data, codec_options)
+
+    if not isinstance(codec_options, CodecOptions):
+        raise _CODEC_OPTIONS_TYPE_ERROR
+
+    if not isinstance(fields, abc.Mapping):
+        raise TypeError("fields needs to be a mapping")
+
+    # Decode documents for internal use.
+    from bson.raw_bson import RawBSONDocument
+    internal_codec_options = CodecOptions(document_class=RawBSONDocument)
+    _doclist = decode_all(data, internal_codec_options)
+
+    # Create document list to be returned to caller.
+    doclist = []
+
+    for _doc in _doclist:
+        doclist.append(_decode_selective(_doc, fields, codec_options,))
+
+    return doclist
 
 
 def decode_iter(data, codec_options=DEFAULT_CODEC_OPTIONS):

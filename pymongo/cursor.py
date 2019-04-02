@@ -984,7 +984,8 @@ class Cursor(object):
             with client._reset_on_error(self.__address, self.__session):
                 docs = self._unpack_response(reply,
                                              self.__id,
-                                             self.__collection.codec_options)
+                                             self.__collection.codec_options,
+                                             from_command)
                 if from_command:
                     first = docs[0]
                     client._process_response(first, self.__session)
@@ -1071,8 +1072,13 @@ class Cursor(object):
         if self.__limit and self.__id and self.__limit <= self.__retrieved:
             self.__die()
 
-    def _unpack_response(self, response, cursor_id, codec_options):
-        return response.unpack_response(cursor_id, codec_options)
+    def _unpack_response(self, response, cursor_id, codec_options,
+                         from_command):
+        args = [cursor_id, codec_options]
+        if from_command:
+            args.append({'cursor': {'firstBatch': 1, 'nextBatch': 1}})
+
+        return response.unpack_response(*args)
 
     def _read_preference(self):
         if self.__read_preference is None:

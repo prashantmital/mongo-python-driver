@@ -1451,7 +1451,8 @@ class _OpMsg(object):
         raise NotImplementedError
 
     def unpack_response(self, cursor_id=None,
-                        codec_options=_UNICODE_REPLACE_CODEC_OPTIONS):
+                        codec_options=_UNICODE_REPLACE_CODEC_OPTIONS,
+                        fields=None):
         """Unpack a OP_MSG command response.
 
         :Parameters:
@@ -1459,7 +1460,8 @@ class _OpMsg(object):
           - `codec_options` (optional): an instance of
             :class:`~bson.codec_options.CodecOptions`
         """
-        return bson.decode_all(self.payload_document, codec_options)
+        return bson.decode_all_custom(
+            self.payload_document, codec_options, fields)
 
     def command_response(self):
         """Unpack a command response."""
