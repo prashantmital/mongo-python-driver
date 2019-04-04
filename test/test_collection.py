@@ -62,6 +62,7 @@ from pymongo.results import (InsertOneResult,
                              DeleteResult)
 from pymongo.write_concern import WriteConcern
 from test import client_context, unittest
+from test.test_bson_custom_types import UNDECIPHERABLE_CODECOPTS
 from test.test_client import IntegrationTest
 from test.utils import (get_pool, ignore_deprecations, is_mongos,
                         rs_or_single_client, single_client,
@@ -131,6 +132,12 @@ class TestCollection(IntegrationTest):
     @classmethod
     def tearDownClass(cls):
         cls.db.drop_collection("test_large_limit")
+
+    def setUp(self):
+        self.db.test.drop()
+
+    def tearDown(self):
+        self.db.test.drop()
 
     @contextlib.contextmanager
     def write_concern_collection(self):
@@ -1105,6 +1112,20 @@ class TestCollection(IntegrationTest):
         dct = defaultdict(dict, [('foo', 'bar')])
         self.assertIsNotNone(db.test.find_one(dct))
         self.assertEqual(dct, defaultdict(dict, [('foo', 'bar')]))
+
+    def test_find_w_custom_type_decoder(self):
+        db = self.db
+        docs = [
+            {'x': 1.0, 'y': 'abc'},
+            {'x': 2.0, 'y': 'def'},
+            {'x': 3.0, 'y': 'ghi'}]
+        for doc in docs:
+            db.test.insert_one(doc)
+        test = db.get_collection(
+            'test', codec_options=UNDECIPHERABLE_CODECOPTS)
+
+        for doc in test.find({}, batch_size=1):
+            self.assertIn(doc, docs)
 
     def test_find_w_fields(self):
         db = self.db

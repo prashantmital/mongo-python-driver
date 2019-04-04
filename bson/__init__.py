@@ -944,8 +944,10 @@ def _decode_selective(rawdoc, fields, codec_options):
     doc = codec_options.document_class()
     for key, value in iteritems(rawdoc):
         if key in fields:
-            if fields[key] == True:
+            if fields[key] == list:
                 doc[key] = [_bson_to_dict(r.raw, codec_options) for r in value]
+            elif fields[key] == dict:
+                doc[key] = _bson_to_dict(value.raw, codec_options)
             else:
                 doc[key] = _decode_selective(value, fields[key], codec_options)
             continue

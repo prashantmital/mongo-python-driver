@@ -1398,7 +1398,8 @@ class _OpReply(object):
         return [self.documents]
 
     def unpack_response(self, cursor_id=None,
-                        codec_options=_UNICODE_REPLACE_CODEC_OPTIONS):
+                        codec_options=_UNICODE_REPLACE_CODEC_OPTIONS,
+                        user_fields=None):
         """Unpack a response from the database and decode the BSON document(s).
 
         Check the response for errors and unpack, returning a dictionary
@@ -1452,7 +1453,7 @@ class _OpMsg(object):
 
     def unpack_response(self, cursor_id=None,
                         codec_options=_UNICODE_REPLACE_CODEC_OPTIONS,
-                        fields=None):
+                        user_fields=None):
         """Unpack a OP_MSG command response.
 
         :Parameters:
@@ -1461,7 +1462,7 @@ class _OpMsg(object):
             :class:`~bson.codec_options.CodecOptions`
         """
         return bson.decode_all_custom(
-            self.payload_document, codec_options, fields)
+            self.payload_document, codec_options, user_fields)
 
     def command_response(self):
         """Unpack a command response."""

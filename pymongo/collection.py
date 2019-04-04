@@ -203,7 +203,8 @@ class Collection(common.BaseObject):
                  write_concern=None,
                  collation=None,
                  session=None,
-                 retryable_write=False):
+                 retryable_write=False,
+                 user_fields=None):
         """Internal command helper.
 
         :Parameters:
@@ -242,7 +243,8 @@ class Collection(common.BaseObject):
                 collation=collation,
                 session=s,
                 client=self.__database.client,
-                retryable_write=retryable_write)
+                retryable_write=retryable_write,
+                user_fields=user_fields)
 
     def __create(self, options, collation, session):
         """Sends a create command with the given options.
@@ -2835,6 +2837,7 @@ class Collection(common.BaseObject):
                           return_document=ReturnDocument.BEFORE,
                           array_filters=None, session=None, **kwargs):
         """Internal findAndModify helper."""
+
         common.validate_is_mapping("filter", filter)
         if not isinstance(return_document, bool):
             raise ValueError("return_document must be "
@@ -2874,8 +2877,10 @@ class Collection(common.BaseObject):
                                 write_concern=write_concern,
                                 allowable_errors=[_NO_OBJ_ERROR],
                                 collation=collation, session=session,
-                                retryable_write=retryable_write)
+                                retryable_write=retryable_write,
+                                user_fields={'value': dict})
             _check_write_command_response(out)
+
             return out.get("value")
 
         return self.__database.client._retryable_write(

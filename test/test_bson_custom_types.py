@@ -33,6 +33,7 @@ from bson import (BSON,
 from bson.codec_options import (CodecOptions, TypeCodec, TypeDecoder,
                                 TypeEncoder, TypeRegistry)
 from bson.errors import InvalidDocument
+from bson.int64 import Int64
 
 from test import unittest
 
@@ -57,6 +58,21 @@ class DecimalDecoder(TypeDecoder):
 
 class DecimalCodec(DecimalDecoder, DecimalEncoder):
     pass
+
+
+class UndecipherableInt64Type(object):
+    def __init__(self, value):
+        self.value = value
+
+
+class IntToUndecipherableIntDecoder(TypeDecoder):
+    bson_type = Int64
+    def transform_bson(self, value):
+        return UndecipherableInt64Type(value)
+
+
+UNDECIPHERABLE_CODECOPTS = CodecOptions(
+    type_registry=TypeRegistry([IntToUndecipherableIntDecoder(),]))
 
 
 class CustomTypeTests(object):

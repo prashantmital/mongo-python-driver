@@ -1076,7 +1076,7 @@ class Cursor(object):
                          from_command):
         args = [cursor_id, codec_options]
         if from_command:
-            args.append({'cursor': {'firstBatch': 1, 'nextBatch': 1}})
+            args.append({'cursor': {'firstBatch': list, 'nextBatch': list}})
 
         return response.unpack_response(*args)
 
