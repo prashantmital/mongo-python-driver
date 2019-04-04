@@ -32,6 +32,7 @@ from bson.raw_bson import RawBSONDocument
 from bson.regex import Regex
 from bson.code import Code
 from bson.codec_options import CodecOptions
+from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.py3compat import itervalues
 from bson.son import SON
@@ -62,7 +63,8 @@ from pymongo.results import (InsertOneResult,
                              DeleteResult)
 from pymongo.write_concern import WriteConcern
 from test import client_context, unittest
-from test.test_bson_custom_types import UNDECIPHERABLE_CODECOPTS
+from test.test_bson_custom_types import (UNDECIPHERABLE_CODECOPTS,
+                                         UndecipherableInt64Type)
 from test.test_client import IntegrationTest
 from test.utils import (get_pool, ignore_deprecations, is_mongos,
                         rs_or_single_client, single_client,
@@ -1115,17 +1117,15 @@ class TestCollection(IntegrationTest):
 
     def test_find_w_custom_type_decoder(self):
         db = self.db
-        docs = [
-            {'x': 1.0, 'y': 'abc'},
-            {'x': 2.0, 'y': 'def'},
-            {'x': 3.0, 'y': 'ghi'}]
-        for doc in docs:
+        input_docs = [
+            {'x': Int64(k)} for k in [1.0, 2.0, 3.0]]
+        for doc in input_docs:
             db.test.insert_one(doc)
+
         test = db.get_collection(
             'test', codec_options=UNDECIPHERABLE_CODECOPTS)
-
         for doc in test.find({}, batch_size=1):
-            self.assertIn(doc, docs)
+            self.assertIsInstance(doc['x'], UndecipherableInt64Type)
 
     def test_find_w_fields(self):
         db = self.db
@@ -2186,6 +2186,30 @@ class TestCollection(IntegrationTest):
         with self.assertRaises(ConfigurationError):
             c_w0.find_one_and_update({}, {'$set': {'y.$[i].b': 5}},
                                      array_filters=[{'i.b': 1}])
+
+    def test_find_one_and__with_custom_type_decoder(self):
+        db = self.db
+        c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
+        c.insert_one({'_id': 1, 'x': Int64(1)})
+
+        c.find_one_and_update({'_id': 1}, {'$inc': {'x': 1}})
+        doc = c.find_one()
+        self.assertEqual(doc['_id'], 1)
+        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
+        self.assertEqual(doc['x'].value, 2)
+
+        c.find_one_and_replace({'_id': 1}, {'x': Int64(3), 'y': True})
+        doc = c.find_one()
+        self.assertEqual(doc['_id'], 1)
+        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
+        self.assertEqual(doc['x'].value, 3)
+        self.assertEqual(doc['y'], True)
+
+        doc = c.find_one_and_delete({'y': True})
+        self.assertEqual(doc['_id'], 1)
+        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
+        self.assertEqual(doc['x'].value, 3)
+        self.assertIsNone(c.find_one())
 
     def test_find_one_and(self):
         c = self.db.test

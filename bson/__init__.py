@@ -979,8 +979,11 @@ def decode_all_custom(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None,):
 
     .. versionadded:: 3.8
     """
-    if not fields or not codec_options.type_registry._decoder_map:
+    if not codec_options.type_registry._decoder_map:
         return decode_all(data, codec_options)
+
+    if not fields:
+        return decode_all(data, codec_options.with_options(type_registry=None))
 
     if not isinstance(codec_options, CodecOptions):
         raise _CODEC_OPTIONS_TYPE_ERROR
