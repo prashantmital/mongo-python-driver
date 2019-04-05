@@ -982,7 +982,7 @@ class Cursor(object):
 
         try:
             with client._reset_on_error(self.__address, self.__session):
-                if from_command
+                if from_command:
                     docs = self._unpack_response(
                         reply, self.__id, self.__collection.codec_options,
                         {'cursor': {'firstBatch': list, 'nextBatch': list}})
