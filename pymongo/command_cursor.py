@@ -150,14 +150,16 @@ class CommandCursor(object):
 
         try:
             with client._reset_on_error(self.__address, self.__session):
-                docs = self._unpack_response(reply,
-                                             self.__id,
-                                             self.__collection.codec_options)
                 if from_command:
+                    docs = self._unpack_response(
+                        reply, self.__id, self.__collection.codec_options,
+                        {'cursor': {'firstBatch': list, 'nextBatch': list}})
                     first = docs[0]
                     client._process_response(first, self.__session)
                     helpers._check_command_response(first)
-
+                else:
+                    docs = self._unpack_response(
+                        reply, self.__id, self.__collection.codec_options)
         except OperationFailure as exc:
             kill()
 
@@ -208,8 +210,9 @@ class CommandCursor(object):
             kill()
         self.__data = deque(documents)
 
-    def _unpack_response(self, response, cursor_id, codec_options):
-        return response.unpack_response(cursor_id, codec_options)
+    def _unpack_response(self, response, cursor_id, codec_options,
+                         user_fields=None):
+        return response.unpack_response(cursor_id, codec_options, user_fields)
 
     def _refresh(self):
         """Refreshes the cursor with more data from the server.
@@ -330,7 +333,8 @@ class RawBatchCommandCursor(CommandCursor):
             collection, cursor_info, address, retrieved, batch_size,
             max_await_time_ms, session, explicit_session)
 
-    def _unpack_response(self, response, cursor_id, codec_options):
+    def _unpack_response(self, response, cursor_id, codec_options,
+                         user_fields=None):
         return response.raw_response(cursor_id)
 
     def __getitem__(self, index):

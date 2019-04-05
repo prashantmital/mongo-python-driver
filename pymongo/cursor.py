@@ -982,14 +982,16 @@ class Cursor(object):
 
         try:
             with client._reset_on_error(self.__address, self.__session):
-                docs = self._unpack_response(reply,
-                                             self.__id,
-                                             self.__collection.codec_options,
-                                             from_command)
-                if from_command:
+                if from_command
+                    docs = self._unpack_response(
+                        reply, self.__id, self.__collection.codec_options,
+                        {'cursor': {'firstBatch': list, 'nextBatch': list}})
                     first = docs[0]
                     client._process_response(first, self.__session)
                     helpers._check_command_response(first)
+                else:
+                    docs = self._unpack_response(
+                        reply, self.__id, self.__collection.codec_options)
         except OperationFailure as exc:
             self.__killed = True
 
@@ -1073,12 +1075,8 @@ class Cursor(object):
             self.__die()
 
     def _unpack_response(self, response, cursor_id, codec_options,
-                         from_command):
-        args = [cursor_id, codec_options]
-        if from_command:
-            args.append({'cursor': {'firstBatch': list, 'nextBatch': list}})
-
-        return response.unpack_response(*args)
+                         user_fields=None):
+        return response.unpack_response(cursor_id, codec_options, user_fields)
 
     def _read_preference(self):
         if self.__read_preference is None:
@@ -1289,7 +1287,8 @@ class RawBatchCursor(Cursor):
             raise InvalidOperation(
                 "Cannot use RawBatchCursor with manipulate=True")
 
-    def _unpack_response(self, response, cursor_id, codec_options):
+    def _unpack_response(self, response, cursor_id, codec_options,
+                         user_fields=None):
         return response.raw_response(cursor_id)
 
     def explain(self):
