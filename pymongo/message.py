@@ -1461,7 +1461,7 @@ class _OpMsg(object):
           - `codec_options` (optional): an instance of
             :class:`~bson.codec_options.CodecOptions`
         """
-        return bson.decode_all_custom(
+        return bson._decode_all_selective(
             self.payload_document, codec_options, user_fields)
 
     def command_response(self):

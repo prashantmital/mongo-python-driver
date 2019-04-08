@@ -955,7 +955,7 @@ def _decode_selective(rawdoc, fields, codec_options):
     return doc
 
 
-def decode_all_custom(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None,):
+def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None, ):
     """Decode BSON data to multiple documents while using user-provided
     custom decoding logic.
 
