@@ -1655,6 +1655,27 @@ class TestCollection(IntegrationTest):
         with self.write_concern_collection() as coll:
             coll.aggregate([{'$out': 'output-collection'}])
 
+    def test_aggregate_w_custom_type_decoder(self):
+        db = self.db
+        db.test.insert_many([
+            {'status': 'in progress', 'qty': Int64(1)},
+            {'status': 'complete', 'qty': Int64(10)},
+            {'status': 'in progress', 'qty': Int64(1)},
+            {'status': 'complete', 'qty': Int64(10)},
+            {'status': 'in progress', 'qty': Int64(1)},])
+        test = db.get_collection(
+            'test', codec_options=UNDECIPHERABLE_CODECOPTS)
+
+        pipeline = [
+            {'$match': {'status': 'complete'}},
+            {'$group': {'_id': "$status", 'total_qty': {"$sum": "$qty"}}},]
+        result = test.aggregate(pipeline)
+
+        res = list(result)[0]
+        self.assertEqual(res['_id'], 'complete')
+        self.assertIsInstance(res['total_qty'], UndecipherableInt64Type)
+        self.assertEqual(res['total_qty'].value, 20)
+
     def test_aggregate_raw_bson(self):
         db = self.db
         db.drop_collection("test")

@@ -2310,7 +2310,9 @@ class Collection(common.BaseObject):
                 write_concern=write_concern,
                 collation=collation,
                 session=session,
-                client=self.__database.client)
+                client=self.__database.client,
+                user_fields={'cursor': {'firstBatch': list,
+                                        'nextBatch': list}})
 
             if "cursor" in result:
                 cursor = result["cursor"]
