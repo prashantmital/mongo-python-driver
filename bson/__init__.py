@@ -956,11 +956,10 @@ def _decode_selective(rawdoc, fields, codec_options):
 
 
 def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None, ):
-    """Decode BSON data to multiple documents while using user-provided
+    """Decode BSON data to a single document while using user-provided
     custom decoding logic.
 
-    `data` must be a string of concatenated, valid, BSON-encoded
-    documents.
+    `data` must be a string representing a valid, BSON-encoded document.
 
     :Parameters:
       - `data`: BSON data
@@ -970,12 +969,13 @@ def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None
         ``decode_all``.
       - `fields` (optional): Map of document namespaces where data that needs
         to be custom decoded lives. If ``fields`` is empty, this method is the
-        same as ``decode_all``. As an example, for custom decoding information
-        in 'field1.subfield1', this should be specified as
-        ``{'field1': {'subfield1': True}}``.
+        same as ``decode_all``. As an example, for custom decoding a list of
+        objects in 'field1.subfield1', this should be specified as
+        ``{'field1': {'subfield1': list}}``. Use ``dict`` instead of ``list``
+        when the field contains a single object.
 
     :Returns:
-      - `document_list`: List of decoded documents.
+      - `document_list`: Single-member list containing the decoded document.
 
     .. versionadded:: 3.8
     """
@@ -985,24 +985,11 @@ def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None
     if not fields:
         return decode_all(data, codec_options.with_options(type_registry=None))
 
-    if not isinstance(codec_options, CodecOptions):
-        raise _CODEC_OPTIONS_TYPE_ERROR
-
-    if not isinstance(fields, abc.Mapping):
-        raise TypeError("fields needs to be a mapping")
-
     # Decode documents for internal use.
     from bson.raw_bson import RawBSONDocument
     internal_codec_options = CodecOptions(document_class=RawBSONDocument)
-    _doclist = decode_all(data, internal_codec_options)
-
-    # Create document list to be returned to caller.
-    doclist = []
-
-    for _doc in _doclist:
-        doclist.append(_decode_selective(_doc, fields, codec_options,))
-
-    return doclist
+    _doc = _bson_to_dict(data, internal_codec_options)
+    return [_decode_selective(_doc, fields, codec_options,)]
 
 
 def decode_iter(data, codec_options=DEFAULT_CODEC_OPTIONS):
