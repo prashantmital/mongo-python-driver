@@ -991,7 +991,8 @@ class Cursor(object):
                     helpers._check_command_response(first)
                 else:
                     docs = self._unpack_response(
-                        reply, self.__id, self.__collection.codec_options)
+                        reply, self.__id, self.__collection.codec_options,
+                        legacy_response=True)
         except OperationFailure as exc:
             self.__killed = True
 
@@ -1075,8 +1076,9 @@ class Cursor(object):
             self.__die()
 
     def _unpack_response(self, response, cursor_id, codec_options,
-                         user_fields=None):
-        return response.unpack_response(cursor_id, codec_options, user_fields)
+                         user_fields=None, legacy_response=False):
+        return response.unpack_response(cursor_id, codec_options, user_fields,
+                                        legacy_response)
 
     def _read_preference(self):
         if self.__read_preference is None:
