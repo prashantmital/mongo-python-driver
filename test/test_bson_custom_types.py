@@ -132,6 +132,7 @@ class CustomTypeTests(object):
 
         fileobj.close()
 
+
 class TestCustomPythonTypeToBSONMonolithicCodec(CustomTypeTests,
                                                 unittest.TestCase):
     @classmethod

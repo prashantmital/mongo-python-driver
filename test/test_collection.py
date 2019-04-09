@@ -31,7 +31,7 @@ import bson
 from bson.raw_bson import RawBSONDocument
 from bson.regex import Regex
 from bson.code import Code
-from bson.codec_options import CodecOptions
+from bson.codec_options import CodecOptions, TypeDecoder, TypeRegistry
 from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.py3compat import itervalues
@@ -816,6 +816,28 @@ class TestCollection(IntegrationTest):
         self.assertTrue(isinstance(result, InsertManyResult))
         self.assertFalse(result.acknowledged)
         self.assertEqual(20, db.test.count_documents({}))
+
+    def test_insert_w_custom_type_decoder(self):
+        class UndecipherableIntType(object):
+            def __init__(self, value):
+                self.value = value
+
+        class DecodeIntToNothing(TypeDecoder):
+            bson_type = int
+            def transform_bson(self, value):
+                return UndecipherableIntType(value)
+
+        codecopts = CodecOptions(
+            type_registry=TypeRegistry([DecodeIntToNothing()]))
+
+        db = self.db
+        test_doc = {'_id': 1, 'data': 'a'}
+        test = db.get_collection('test', codec_options=codecopts)
+
+        result = test.insert_one(test_doc)
+        self.assertEqual(result.inserted_id, test_doc['_id'])
+        with self.assertRaises(DuplicateKeyError):
+            test.insert_one(test_doc)
 
     def test_delete_one(self):
         self.db.test.drop()
