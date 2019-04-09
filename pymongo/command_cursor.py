@@ -159,7 +159,8 @@ class CommandCursor(object):
                     helpers._check_command_response(first)
                 else:
                     docs = self._unpack_response(
-                        reply, self.__id, self.__collection.codec_options)
+                        reply, self.__id, self.__collection.codec_options,
+                        legacy_response=True)
         except OperationFailure as exc:
             kill()
 
@@ -211,8 +212,9 @@ class CommandCursor(object):
         self.__data = deque(documents)
 
     def _unpack_response(self, response, cursor_id, codec_options,
-                         user_fields=None):
-        return response.unpack_response(cursor_id, codec_options, user_fields)
+                         user_fields=None, legacy_response=False):
+        return response.unpack_response(cursor_id, codec_options, user_fields,
+                                        legacy_response)
 
     def _refresh(self):
         """Refreshes the cursor with more data from the server.
@@ -334,7 +336,7 @@ class RawBatchCommandCursor(CommandCursor):
             max_await_time_ms, session, explicit_session)
 
     def _unpack_response(self, response, cursor_id, codec_options,
-                         user_fields=None):
+                         user_fields=None, legacy_response=False):
         return response.raw_response(cursor_id)
 
     def __getitem__(self, index):

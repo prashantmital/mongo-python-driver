@@ -1290,7 +1290,7 @@ class RawBatchCursor(Cursor):
                 "Cannot use RawBatchCursor with manipulate=True")
 
     def _unpack_response(self, response, cursor_id, codec_options,
-                         user_fields=None):
+                         user_fields=None, legacy_response=False):
         return response.raw_response(cursor_id)
 
     def explain(self):
