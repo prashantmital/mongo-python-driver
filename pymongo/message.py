@@ -1456,7 +1456,7 @@ class _OpMsg(object):
 
     def unpack_response(self, cursor_id=None,
                         codec_options=_UNICODE_REPLACE_CODEC_OPTIONS,
-                        user_fields=None):
+                        user_fields=None, legacy_response=False):
         """Unpack a OP_MSG command response.
 
         :Parameters:
