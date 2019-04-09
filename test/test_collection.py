@@ -817,7 +817,7 @@ class TestCollection(IntegrationTest):
         self.assertFalse(result.acknowledged)
         self.assertEqual(20, db.test.count_documents({}))
 
-    def test_insert_w_custom_type_decoder(self):
+    def test_command_errors_w_custom_type_decoder(self):
         class UndecipherableIntType(object):
             def __init__(self, value):
                 self.value = value
