@@ -3298,7 +3298,8 @@ class Collection(common.BaseObject):
             result = self._command(
                 sock_info, cmd, read_preference=ReadPreference.PRIMARY,
                 allowable_errors=[_NO_OBJ_ERROR], collation=collation,
-                session=session, retryable_write=retryable_write)
+                session=session, retryable_write=retryable_write,
+                user_fields={'value': dict})
 
             _check_write_command_response(result)
             return result

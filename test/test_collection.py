@@ -2230,19 +2230,19 @@ class TestCollection(IntegrationTest):
             c_w0.find_one_and_update({}, {'$set': {'y.$[i].b': 5}},
                                      array_filters=[{'i.b': 1}])
 
-    def test_find_one_and__with_custom_type_decoder(self):
+    def test_find_one_and__w_custom_type_decoder(self):
         db = self.db
         c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
         c.insert_one({'_id': 1, 'x': Int64(1)})
 
-        c.find_one_and_update({'_id': 1}, {'$inc': {'x': 1}})
-        doc = c.find_one()
+        doc = c.find_one_and_update({'_id': 1}, {'$inc': {'x': 1}},
+                                    return_document=ReturnDocument.AFTER)
         self.assertEqual(doc['_id'], 1)
         self.assertIsInstance(doc['x'], UndecipherableInt64Type)
         self.assertEqual(doc['x'].value, 2)
 
-        c.find_one_and_replace({'_id': 1}, {'x': Int64(3), 'y': True})
-        doc = c.find_one()
+        doc = c.find_one_and_replace({'_id': 1}, {'x': Int64(3), 'y': True},
+                                     return_document=ReturnDocument.AFTER)
         self.assertEqual(doc['_id'], 1)
         self.assertIsInstance(doc['x'], UndecipherableInt64Type)
         self.assertEqual(doc['x'].value, 3)
@@ -2253,6 +2253,21 @@ class TestCollection(IntegrationTest):
         self.assertIsInstance(doc['x'], UndecipherableInt64Type)
         self.assertEqual(doc['x'].value, 3)
         self.assertIsNone(c.find_one())
+
+    def test_find_and_modify_w_custom_type_decoder(self):
+        db = self.db
+        c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
+        c.insert_one({'_id': 1, 'x': Int64(1)})
+
+        doc = c.find_and_modify({'_id': 1}, {'$inc': {'x': Int64(10)}})
+        self.assertEqual(doc['_id'], 1)
+        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
+        self.assertEqual(doc['x'].value, 1)
+
+        doc = c.find_one()
+        self.assertEqual(doc['_id'], 1)
+        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
+        self.assertEqual(doc['x'].value, 11)
 
     def test_find_one_and(self):
         c = self.db.test
