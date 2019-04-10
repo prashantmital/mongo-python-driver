@@ -150,17 +150,14 @@ class CommandCursor(object):
 
         try:
             with client._reset_on_error(self.__address, self.__session):
+                docs = self._unpack_response(
+                    reply, self.__id, self.__collection.codec_options,
+                    legacy_response=True, user_fields={
+                        'cursor': {'firstBatch': list, 'nextBatch': list}})
                 if from_command:
-                    docs = self._unpack_response(
-                        reply, self.__id, self.__collection.codec_options,
-                        {'cursor': {'firstBatch': list, 'nextBatch': list}})
                     first = docs[0]
                     client._process_response(first, self.__session)
                     helpers._check_command_response(first)
-                else:
-                    docs = self._unpack_response(
-                        reply, self.__id, self.__collection.codec_options,
-                        legacy_response=True)
         except OperationFailure as exc:
             kill()
 
