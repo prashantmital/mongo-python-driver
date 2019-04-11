@@ -1416,13 +1416,10 @@ class _OpReply(object):
             :class:`~bson.codec_options.CodecOptions`
         """
         self.raw_response(cursor_id)
-        if user_fields:
-            return bson._decode_all_selective(
-                self.documents, codec_options, user_fields)
         if legacy_response:
             return bson.decode_all(self.documents, codec_options)
-        return bson.decode_all(
-            self.documents, codec_options.with_options(type_registry=None))
+        return bson._decode_all_selective(
+            self.documents, codec_options, user_fields)
 
     def command_response(self):
         """Unpack a command response."""
