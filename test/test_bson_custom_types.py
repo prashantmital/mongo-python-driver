@@ -27,6 +27,7 @@ from bson import (BSON,
                   decode_file_iter,
                   decode_iter,
                   RE_TYPE,
+                  _BUILT_IN_TYPES,
                   _dict_to_bson,
                   _bson_to_dict)
 from bson.codec_options import (CodecOptions, TypeCodec, TypeDecoder,
