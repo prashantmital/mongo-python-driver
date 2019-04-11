@@ -1416,7 +1416,7 @@ class _OpReply(object):
             :class:`~bson.codec_options.CodecOptions`
         """
         self.raw_response(cursor_id)
-        if legacy_response:
+        if legacy_response and not user_fields:
             return bson.decode_all(self.documents, codec_options)
         return bson._decode_all_selective(
             self.documents, codec_options, user_fields)
