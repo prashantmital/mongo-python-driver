@@ -982,10 +982,15 @@ class Cursor(object):
 
         try:
             with client._reset_on_error(self.__address, self.__session):
+                user_fields = None
+                legacy_response = True
+                if from_command:
+                    user_fields = {
+                        'cursor': {'firstBatch': list, 'nextBatch': list}}
+                    legacy_response = False
                 docs = self._unpack_response(
                     reply, self.__id, self.__collection.codec_options,
-                    legacy_response=True, user_fields={
-                        'cursor': {'firstBatch': list, 'nextBatch': list}})
+                    legacy_response=legacy_response, user_fields=user_fields)
                 if from_command:
                     first = docs[0]
                     client._process_response(first, self.__session)
