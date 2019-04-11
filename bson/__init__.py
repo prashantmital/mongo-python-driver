@@ -955,7 +955,7 @@ def _decode_selective(rawdoc, fields, codec_options):
     return doc
 
 
-def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None, ):
+def _decode_all_selective(data, codec_options, fields):
     """Decode BSON data to a single document while using user-provided
     custom decoding logic.
 
@@ -963,16 +963,16 @@ def _decode_all_selective(data, codec_options=DEFAULT_CODEC_OPTIONS, fields=None
 
     :Parameters:
       - `data`: BSON data
-      - `codec_options` (optional): An instance of
+      - `codec_options`: An instance of
         :class:`~bson.codec_options.CodecOptions` with user-specified type
         decoders. If no decoders are found, this method is the same as
         ``decode_all``.
-      - `fields` (optional): Map of document namespaces where data that needs
-        to be custom decoded lives. If ``fields`` is empty, this method is the
-        same as ``decode_all``. As an example, for custom decoding a list of
-        objects in 'field1.subfield1', this should be specified as
+      - `fields`: Map of document namespaces where data that needs
+        to be custom decoded lives or None. For example, to custom decode a
+        list of objects in 'field1.subfield1', the specified value should be
         ``{'field1': {'subfield1': list}}``. Use ``dict`` instead of ``list``
-        when the field contains a single object.
+        if the field contains a single object to custom decode. If ``fields``
+        is an empty map or None, this method is the same as ``decode_all``.
 
     :Returns:
       - `document_list`: Single-member list containing the decoded document.
