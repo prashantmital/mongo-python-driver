@@ -1464,6 +1464,8 @@ class _OpMsg(object):
           - `codec_options` (optional): an instance of
             :class:`~bson.codec_options.CodecOptions`
         """
+        # If _OpMsg is in-use, this cannot be a legacy response.
+        assert not legacy_response
         return bson._decode_all_selective(
             self.payload_document, codec_options, user_fields)
 
