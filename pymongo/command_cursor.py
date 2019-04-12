@@ -20,6 +20,7 @@ from collections import deque
 
 from bson.py3compat import integer_types
 from pymongo import helpers
+from pymongo.cursor import _CURSOR_DOC_FIELDS
 from pymongo.errors import (AutoReconnect,
                             InvalidOperation,
                             NotMasterError,
@@ -152,8 +153,7 @@ class CommandCursor(object):
             with client._reset_on_error(self.__address, self.__session):
                 docs = self._unpack_response(
                     reply, self.__id, self.__collection.codec_options,
-                    legacy_response=True, user_fields={
-                        'cursor': {'firstBatch': list, 'nextBatch': list}})
+                    legacy_response=True, user_fields=_CURSOR_DOC_FIELDS)
                 if from_command:
                     first = docs[0]
                     client._process_response(first, self.__session)

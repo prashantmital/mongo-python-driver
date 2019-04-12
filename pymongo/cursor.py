@@ -50,6 +50,7 @@ _QUERY_OPTIONS = {
     "await_data": 32,
     "exhaust": 64,
     "partial": 128}
+_CURSOR_DOC_FIELDS = {'cursor': {'firstBatch': list, 'nextBatch': list}}
 
 
 class CursorType(object):
@@ -985,8 +986,7 @@ class Cursor(object):
                 user_fields = None
                 legacy_response = True
                 if from_command:
-                    user_fields = {
-                        'cursor': {'firstBatch': list, 'nextBatch': list}}
+                    user_fields = _CURSOR_DOC_FIELDS
                     legacy_response = False
                 docs = self._unpack_response(
                     reply, self.__id, self.__collection.codec_options,

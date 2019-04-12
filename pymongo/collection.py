@@ -34,7 +34,7 @@ from pymongo.command_cursor import CommandCursor, RawBatchCommandCursor
 from pymongo.common import ORDERED_TYPES
 from pymongo.collation import validate_collation_or_none
 from pymongo.change_stream import CollectionChangeStream
-from pymongo.cursor import Cursor, RawBatchCursor
+from pymongo.cursor import Cursor, RawBatchCursor, _CURSOR_DOC_FIELDS
 from pymongo.errors import (BulkWriteError,
                             ConfigurationError,
                             InvalidName,
@@ -2312,8 +2312,7 @@ class Collection(common.BaseObject):
                 collation=collation,
                 session=session,
                 client=self.__database.client,
-                user_fields={'cursor': {'firstBatch': list,
-                                        'nextBatch': list}})
+                user_fields=_CURSOR_DOC_FIELDS)
 
             if "cursor" in result:
                 cursor = result["cursor"]
