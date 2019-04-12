@@ -53,6 +53,7 @@ from pymongo.write_concern import WriteConcern
 
 _NO_OBJ_ERROR = "No matching object found"
 _UJOIN = u"%s.%s"
+_FIND_AND_MODIFY_DOC_FIELDS = {'value': dict}
 
 
 class ReturnDocument(object):
@@ -2880,7 +2881,7 @@ class Collection(common.BaseObject):
                                 allowable_errors=[_NO_OBJ_ERROR],
                                 collation=collation, session=session,
                                 retryable_write=retryable_write,
-                                user_fields={'value': dict})
+                                user_fields=_FIND_AND_MODIFY_DOC_FIELDS)
             _check_write_command_response(out)
 
             return out.get("value")
@@ -3299,7 +3300,7 @@ class Collection(common.BaseObject):
                 sock_info, cmd, read_preference=ReadPreference.PRIMARY,
                 allowable_errors=[_NO_OBJ_ERROR], collation=collation,
                 session=session, retryable_write=retryable_write,
-                user_fields={'value': dict})
+                user_fields=_FIND_AND_MODIFY_DOC_FIELDS)
 
             _check_write_command_response(result)
             return result
