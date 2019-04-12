@@ -2254,6 +2254,7 @@ class TestCollection(IntegrationTest):
         self.assertEqual(doc['x'].value, 3)
         self.assertIsNone(c.find_one())
 
+    @ignore_deprecations
     def test_find_and_modify_w_custom_type_decoder(self):
         db = self.db
         c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
