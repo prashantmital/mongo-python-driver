@@ -23,7 +23,6 @@ import threading
 
 from codecs import utf_8_decode
 from collections import defaultdict
-from decimal import Decimal
 
 sys.path[0:0] = [""]
 
@@ -33,7 +32,6 @@ from bson.raw_bson import RawBSONDocument
 from bson.regex import Regex
 from bson.code import Code
 from bson.codec_options import CodecOptions
-from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.py3compat import itervalues
 from bson.son import SON
@@ -64,9 +62,6 @@ from pymongo.results import (InsertOneResult,
                              DeleteResult)
 from pymongo.write_concern import WriteConcern
 from test import client_context, unittest
-from test.test_bson_custom_types import (DECIMAL_CODECOPTS,
-                                         UNDECIPHERABLE_CODECOPTS,
-                                         UndecipherableInt64Type)
 from test.test_client import IntegrationTest
 from test.utils import (get_pool, ignore_deprecations, is_mongos,
                         rs_or_single_client, single_client,
@@ -819,17 +814,6 @@ class TestCollection(IntegrationTest):
         self.assertFalse(result.acknowledged)
         self.assertEqual(20, db.test.count_documents({}))
 
-    def test_command_errors_w_custom_type_decoder(self):
-        db = self.db
-        test_doc = {'_id': 1, 'data': 'a'}
-        test = db.get_collection('test',
-                                 codec_options=UNDECIPHERABLE_CODECOPTS)
-
-        result = test.insert_one(test_doc)
-        self.assertEqual(result.inserted_id, test_doc['_id'])
-        with self.assertRaises(DuplicateKeyError):
-            test.insert_one(test_doc)
-
     def test_delete_one(self):
         self.db.test.drop()
 
@@ -1127,18 +1111,6 @@ class TestCollection(IntegrationTest):
         dct = defaultdict(dict, [('foo', 'bar')])
         self.assertIsNotNone(db.test.find_one(dct))
         self.assertEqual(dct, defaultdict(dict, [('foo', 'bar')]))
-
-    def test_find_w_custom_type_decoder(self):
-        db = self.db
-        input_docs = [
-            {'x': Int64(k)} for k in [1.0, 2.0, 3.0]]
-        for doc in input_docs:
-            db.test.insert_one(doc)
-
-        test = db.get_collection(
-            'test', codec_options=UNDECIPHERABLE_CODECOPTS)
-        for doc in test.find({}, batch_size=1):
-            self.assertIsInstance(doc['x'], UndecipherableInt64Type)
 
     def test_find_w_fields(self):
         db = self.db
@@ -1668,40 +1640,6 @@ class TestCollection(IntegrationTest):
         with self.write_concern_collection() as coll:
             coll.aggregate([{'$out': 'output-collection'}])
 
-    @client_context.require_version_max(4, 1, 0, -1)
-    def test_group_w_custom_type(self):
-        db = self.db
-        test = db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
-        test.insert_many([
-            {'sku': 'a', 'qty': Decimal('2.0')},
-            {'sku': 'b', 'qty': Decimal('5.0')},
-            {'sku': 'a', 'qty': Decimal('1.0')}])
-
-        self.assertEqual([{'sku': 'b', 'qty': Decimal('5.0')},],
-                         test.group(["sku", "qty"], {"sku": "b"}, {},
-                                    "function (obj, prev) { }"))
-
-    def test_aggregate_w_custom_type_decoder(self):
-        db = self.db
-        db.test.insert_many([
-            {'status': 'in progress', 'qty': Int64(1)},
-            {'status': 'complete', 'qty': Int64(10)},
-            {'status': 'in progress', 'qty': Int64(1)},
-            {'status': 'complete', 'qty': Int64(10)},
-            {'status': 'in progress', 'qty': Int64(1)},])
-        test = db.get_collection(
-            'test', codec_options=UNDECIPHERABLE_CODECOPTS)
-
-        pipeline = [
-            {'$match': {'status': 'complete'}},
-            {'$group': {'_id': "$status", 'total_qty': {"$sum": "$qty"}}},]
-        result = test.aggregate(pipeline)
-
-        res = list(result)[0]
-        self.assertEqual(res['_id'], 'complete')
-        self.assertIsInstance(res['total_qty'], UndecipherableInt64Type)
-        self.assertEqual(res['total_qty'].value, 20)
-
     def test_aggregate_raw_bson(self):
         db = self.db
         db.drop_collection("test")
@@ -2052,23 +1990,6 @@ class TestCollection(IntegrationTest):
 
         self.assertEqual(["a", "b", "c"], distinct)
 
-    # collection.distinct does not support custom type decoding
-    @unittest.expectedFailure
-    def test_distinct_w_custom_type(self):
-        self.db.drop_collection("test")
-
-        test = self.db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
-        test.insert_many([
-            {"a": Decimal('1.0')}, {"a": Decimal('2.0')},
-            {"a": Decimal('2.0')}, {"a": Decimal('2.0')},
-            {"a": Decimal('3.0')}])
-
-        distinct = test.distinct("a")
-        distinct.sort()
-
-        self.assertEqual([Decimal('1.0'), Decimal('2.0'), Decimal('3.0')],
-                         distinct)
-
     def test_query_on_query_field(self):
         self.db.drop_collection("test")
         self.db.test.insert_one({"query": "foo"})
@@ -2188,34 +2109,6 @@ class TestCollection(IntegrationTest):
         with self.write_concern_collection() as coll:
             coll.map_reduce(map, reduce, 'output')
 
-    def test_map_reduce_w_custom_type(self):
-        test = self.db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
-
-        test.insert_many([
-            {'_id': 1, 'sku': 'a', 'qty': Decimal('1.0')},
-            {'_id': 2, 'sku': 'b', 'qty': Decimal('2.0')}])
-
-        map = Code("function () {"
-                   "  emit(this.sku, this.qty);"
-                   "}")
-        reduce = Code("function (key, values) {"
-                      "  return Array.sum(values)"
-                      "}")
-
-        result = test.map_reduce(map, reduce, out={'inline': 1})
-        self.assertTrue(isinstance(result, dict))
-        self.assertTrue('results' in result)
-        self.assertTrue(result['results'][1]["_id"] in ("a", "b"))
-
-        result = test.inline_map_reduce(map, reduce)
-        self.assertTrue(isinstance(result, list))
-        self.assertEqual(2, len(result))
-        self.assertTrue(result[1]["_id"] in ("a", "b"))
-
-        full_result = test.inline_map_reduce(map, reduce,
-                                             full_response=True)
-        self.assertEqual(2, full_result["counts"]["emit"])
-
     def test_messages_with_unicode_collection_names(self):
         db = self.db
 
@@ -2278,46 +2171,6 @@ class TestCollection(IntegrationTest):
         with self.assertRaises(ConfigurationError):
             c_w0.find_one_and_update({}, {'$set': {'y.$[i].b': 5}},
                                      array_filters=[{'i.b': 1}])
-
-    def test_find_one_and__w_custom_type_decoder(self):
-        db = self.db
-        c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
-        c.insert_one({'_id': 1, 'x': Int64(1)})
-
-        doc = c.find_one_and_update({'_id': 1}, {'$inc': {'x': 1}},
-                                    return_document=ReturnDocument.AFTER)
-        self.assertEqual(doc['_id'], 1)
-        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
-        self.assertEqual(doc['x'].value, 2)
-
-        doc = c.find_one_and_replace({'_id': 1}, {'x': Int64(3), 'y': True},
-                                     return_document=ReturnDocument.AFTER)
-        self.assertEqual(doc['_id'], 1)
-        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
-        self.assertEqual(doc['x'].value, 3)
-        self.assertEqual(doc['y'], True)
-
-        doc = c.find_one_and_delete({'y': True})
-        self.assertEqual(doc['_id'], 1)
-        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
-        self.assertEqual(doc['x'].value, 3)
-        self.assertIsNone(c.find_one())
-
-    @ignore_deprecations
-    def test_find_and_modify_w_custom_type_decoder(self):
-        db = self.db
-        c = db.get_collection('test', codec_options=UNDECIPHERABLE_CODECOPTS)
-        c.insert_one({'_id': 1, 'x': Int64(1)})
-
-        doc = c.find_and_modify({'_id': 1}, {'$inc': {'x': Int64(10)}})
-        self.assertEqual(doc['_id'], 1)
-        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
-        self.assertEqual(doc['x'].value, 1)
-
-        doc = c.find_one()
-        self.assertEqual(doc['_id'], 1)
-        self.assertIsInstance(doc['x'], UndecipherableInt64Type)
-        self.assertEqual(doc['x'].value, 11)
 
     def test_find_one_and(self):
         c = self.db.test
