@@ -60,6 +60,10 @@ class DecimalCodec(DecimalDecoder, DecimalEncoder):
     pass
 
 
+DECIMAL_CODECOPTS = CodecOptions(
+    type_registry=TypeRegistry([DecimalCodec()]))
+
+
 class UndecipherableInt64Type(object):
     def __init__(self, value):
         self.value = value
@@ -138,17 +142,15 @@ class TestCustomPythonTypeToBSONMonolithicCodec(CustomTypeTests,
                                                 unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        type_registry = TypeRegistry((DecimalCodec(),))
-        codec_options = CodecOptions(type_registry=type_registry)
-        cls.codecopts = codec_options
+        cls.codecopts = DECIMAL_CODECOPTS
 
 
 class TestCustomPythonTypeToBSONMultiplexedCodec(CustomTypeTests,
                                                  unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        type_registry = TypeRegistry((DecimalEncoder(), DecimalDecoder()))
-        codec_options = CodecOptions(type_registry=type_registry)
+        codec_options = CodecOptions(
+            type_registry=TypeRegistry((DecimalEncoder(), DecimalDecoder())))
         cls.codecopts = codec_options
 
 

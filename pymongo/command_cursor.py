@@ -154,7 +154,7 @@ class CommandCursor(object):
                 user_fields = None
                 legacy_response = True
                 if from_command:
-                    user_fields = _CURSOR_DOC_FIELDS
+                    user_fields = {'cursor': {'nextBatch': list}}
                     legacy_response = False
                 docs = self._unpack_response(
                     reply, self.__id, self.__collection.codec_options,

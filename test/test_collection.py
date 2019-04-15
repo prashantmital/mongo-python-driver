@@ -23,6 +23,7 @@ import threading
 
 from codecs import utf_8_decode
 from collections import defaultdict
+from decimal import Decimal
 
 sys.path[0:0] = [""]
 
@@ -31,7 +32,7 @@ import bson
 from bson.raw_bson import RawBSONDocument
 from bson.regex import Regex
 from bson.code import Code
-from bson.codec_options import CodecOptions, TypeDecoder, TypeRegistry
+from bson.codec_options import CodecOptions
 from bson.int64 import Int64
 from bson.objectid import ObjectId
 from bson.py3compat import itervalues
@@ -63,7 +64,8 @@ from pymongo.results import (InsertOneResult,
                              DeleteResult)
 from pymongo.write_concern import WriteConcern
 from test import client_context, unittest
-from test.test_bson_custom_types import (UNDECIPHERABLE_CODECOPTS,
+from test.test_bson_custom_types import (DECIMAL_CODECOPTS,
+                                         UNDECIPHERABLE_CODECOPTS,
                                          UndecipherableInt64Type)
 from test.test_client import IntegrationTest
 from test.utils import (get_pool, ignore_deprecations, is_mongos,
@@ -818,21 +820,10 @@ class TestCollection(IntegrationTest):
         self.assertEqual(20, db.test.count_documents({}))
 
     def test_command_errors_w_custom_type_decoder(self):
-        class UndecipherableIntType(object):
-            def __init__(self, value):
-                self.value = value
-
-        class DecodeIntToNothing(TypeDecoder):
-            bson_type = int
-            def transform_bson(self, value):
-                return UndecipherableIntType(value)
-
-        codecopts = CodecOptions(
-            type_registry=TypeRegistry([DecodeIntToNothing()]))
-
         db = self.db
         test_doc = {'_id': 1, 'data': 'a'}
-        test = db.get_collection('test', codec_options=codecopts)
+        test = db.get_collection('test',
+                                 codec_options=UNDECIPHERABLE_CODECOPTS)
 
         result = test.insert_one(test_doc)
         self.assertEqual(result.inserted_id, test_doc['_id'])
@@ -1677,6 +1668,19 @@ class TestCollection(IntegrationTest):
         with self.write_concern_collection() as coll:
             coll.aggregate([{'$out': 'output-collection'}])
 
+    @client_context.require_version_max(4, 1, 0, -1)
+    def test_group_w_custom_type(self):
+        db = self.db
+        test = db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
+        test.insert_many([
+            {'sku': 'a', 'qty': Decimal('2.0')},
+            {'sku': 'b', 'qty': Decimal('5.0')},
+            {'sku': 'a', 'qty': Decimal('1.0')}])
+
+        self.assertEqual([{'sku': 'b', 'qty': Decimal('5.0')},],
+                         test.group(["sku", "qty"], {"sku": "b"}, {},
+                                    "function (obj, prev) { }"))
+
     def test_aggregate_w_custom_type_decoder(self):
         db = self.db
         db.test.insert_many([
@@ -2048,6 +2052,23 @@ class TestCollection(IntegrationTest):
 
         self.assertEqual(["a", "b", "c"], distinct)
 
+    # collection.distinct does not support custom type decoding
+    @unittest.expectedFailure
+    def test_distinct_w_custom_type(self):
+        self.db.drop_collection("test")
+
+        test = self.db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
+        test.insert_many([
+            {"a": Decimal('1.0')}, {"a": Decimal('2.0')},
+            {"a": Decimal('2.0')}, {"a": Decimal('2.0')},
+            {"a": Decimal('3.0')}])
+
+        distinct = test.distinct("a")
+        distinct.sort()
+
+        self.assertEqual([Decimal('1.0'), Decimal('2.0'), Decimal('3.0')],
+                         distinct)
+
     def test_query_on_query_field(self):
         self.db.drop_collection("test")
         self.db.test.insert_one({"query": "foo"})
@@ -2166,6 +2187,34 @@ class TestCollection(IntegrationTest):
 
         with self.write_concern_collection() as coll:
             coll.map_reduce(map, reduce, 'output')
+
+    def test_map_reduce_w_custom_type(self):
+        test = self.db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
+
+        test.insert_many([
+            {'_id': 1, 'sku': 'a', 'qty': Decimal('1.0')},
+            {'_id': 2, 'sku': 'b', 'qty': Decimal('2.0')}])
+
+        map = Code("function () {"
+                   "  emit(this.sku, this.qty);"
+                   "}")
+        reduce = Code("function (key, values) {"
+                      "  return Array.sum(values)"
+                      "}")
+
+        result = test.map_reduce(map, reduce, out={'inline': 1})
+        self.assertTrue(isinstance(result, dict))
+        self.assertTrue('results' in result)
+        self.assertTrue(result['results'][1]["_id"] in ("a", "b"))
+
+        result = test.inline_map_reduce(map, reduce)
+        self.assertTrue(isinstance(result, list))
+        self.assertEqual(2, len(result))
+        self.assertTrue(result[1]["_id"] in ("a", "b"))
+
+        full_result = test.inline_map_reduce(map, reduce,
+                                             full_response=True)
+        self.assertEqual(2, full_result["counts"]["emit"])
 
     def test_messages_with_unicode_collection_names(self):
         db = self.db
