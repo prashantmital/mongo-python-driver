@@ -40,7 +40,7 @@ from pymongo.message import (_convert_exception,
                              _RawBatchGetMore,
                              _Query,
                              _RawBatchQuery)
-from pymongo.read_preferences import ReadPreference
+
 
 _QUERY_OPTIONS = {
     "tailable_cursor": 2,

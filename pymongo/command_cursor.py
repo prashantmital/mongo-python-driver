@@ -20,7 +20,6 @@ from collections import deque
 
 from bson.py3compat import integer_types
 from pymongo import helpers
-from pymongo.cursor import _CURSOR_DOC_FIELDS
 from pymongo.errors import (AutoReconnect,
                             InvalidOperation,
                             NotMasterError,
