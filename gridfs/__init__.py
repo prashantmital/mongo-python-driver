@@ -65,13 +65,9 @@ class GridFS(object):
             raise ConfigurationError('database must use '
                                      'acknowledged write_concern')
 
-        self.__database = database.client.get_database(
-            name=database.name,
-            codec_options=database.codec_options.with_options(
-                type_registry=None),
-            read_preference=database.read_preference,
-            write_concern=database.write_concern,
-            read_concern=database.read_concern)
+        # Remove custom type codecs from codec options.
+        codecopts = database.codec_options.with_options(type_registry=None)
+        self.__database = database.with_options(codec_options=codecopts)
         self.__collection = database[collection]
         self.__files = self.__collection.files
         self.__chunks = self.__collection.chunks
