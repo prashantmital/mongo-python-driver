@@ -318,9 +318,8 @@ class Collection(common.BaseObject):
         """
         return self.__database
 
-    def with_options(
-            self, codec_options=None, read_preference=None,
-            write_concern=None, read_concern=None):
+    def with_options(self, codec_options=None, read_preference=None,
+                     write_concern=None, read_concern=None):
         """Get a clone of this collection changing the specified settings.
 
           >>> coll1.read_preference
