@@ -76,7 +76,9 @@ class UndecipherableInt64Type(object):
         self.value = value
 
     def __eq__(self, other):
-        return self.value == other.value
+        if isinstance(other, type(self)):
+            return self.value == other.value
+        return self.value == other
 
 
 class UndecipherableIntDecoder(TypeDecoder):
@@ -581,21 +583,23 @@ class TestCollectionWCustomType(IntegrationTest):
         self.assertEqual(res['total_qty'].value, 20)
 
     # collection.distinct does not support custom type decoding
-    @unittest.expectedFailure
     def test_distinct_w_custom_type(self):
         self.db.drop_collection("test")
 
-        test = self.db.get_collection('test', codec_options=DECIMAL_CODECOPTS)
+        test = self.db.get_collection('test', codec_options=UNINT_CODECOPTS)
         test.insert_many([
-            {"a": Decimal('1.0')}, {"a": Decimal('2.0')},
-            {"a": Decimal('2.0')}, {"a": Decimal('2.0')},
-            {"a": Decimal('3.0')}])
+            {"a": UndecipherableInt64Type(1)},
+            {"a": UndecipherableInt64Type(2)},
+            {"a": UndecipherableInt64Type(2)},
+            {"a": UndecipherableInt64Type(2)},
+            {"a": UndecipherableInt64Type(3)}])
 
         distinct = test.distinct("a")
         distinct.sort()
 
-        self.assertEqual([Decimal('1.0'), Decimal('2.0'), Decimal('3.0')],
-                         distinct)
+        self.assertEqual([
+            UndecipherableInt64Type(1), UndecipherableInt64Type(2),
+            UndecipherableInt64Type(3)], distinct)
 
     def test_map_reduce_w_custom_type(self):
         test = self.db.get_collection(
