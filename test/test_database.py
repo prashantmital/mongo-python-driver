@@ -58,6 +58,7 @@ from test.utils import (ignore_deprecations,
                         server_started_with_auth,
                         IMPOSSIBLE_WRITE_CONCERN,
                         OvertCommandListener)
+from test.test_custom_types import DECIMAL_CODECOPTS
 
 
 if PY3:
@@ -977,7 +978,6 @@ class TestDatabase(IntegrationTest):
                                       mode="off")
 
     def test_with_options(self):
-        from .test_custom_types import DECIMAL_CODECOPTS
         codec_options = DECIMAL_CODECOPTS
         read_preference = ReadPreference.SECONDARY_PREFERRED
         write_concern = WriteConcern(j=True)

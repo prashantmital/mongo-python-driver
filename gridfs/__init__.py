@@ -25,7 +25,8 @@ from gridfs.errors import NoFile
 from gridfs.grid_file import (GridIn,
                               GridOut,
                               GridOutCursor,
-                              DEFAULT_CHUNK_SIZE)
+                              DEFAULT_CHUNK_SIZE,
+                              _clear_entity_type_registry)
 from pymongo import (ASCENDING,
                      DESCENDING)
 from pymongo.common import UNAUTHORIZED_CODES, validate_string
@@ -61,13 +62,13 @@ class GridFS(object):
         if not isinstance(database, Database):
             raise TypeError("database must be an instance of Database")
 
+        database = _clear_entity_type_registry(database)
+
         if not database.write_concern.acknowledged:
             raise ConfigurationError('database must use '
                                      'acknowledged write_concern')
 
-        # Remove custom type codecs from codec options.
-        codecopts = database.codec_options.with_options(type_registry=None)
-        self.__database = database.with_options(codec_options=codecopts)
+        self.__database = database
         self.__collection = database[collection]
         self.__files = self.__collection.files
         self.__chunks = self.__collection.chunks
@@ -444,6 +445,8 @@ class GridFSBucket(object):
         """
         if not isinstance(db, Database):
             raise TypeError("database must be an instance of Database")
+
+        db = _clear_entity_type_registry(db)
 
         wtc = write_concern if write_concern is not None else db.write_concern
         if not wtc.acknowledged:
