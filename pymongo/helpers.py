@@ -154,11 +154,6 @@ def _check_command_response(response, msg=None, allowable_errors=None,
                 raise ExecutionTimeout(errmsg, code, response)
             elif code == 43:
                 raise CursorNotFound(errmsg, code, response)
-            # retryWrites on MMAPv1 should raise an actionable error.
-            elif code == 20 and errmsg.startswith("Transaction numbers"):
-                errmsg = ("This MongoDB deployment does not support retryable "
-                          "writes. Please add retryWrites=false to your "
-                          "connection string.")
 
             msg = msg or "%s"
             raise OperationFailure(msg % errmsg, code, response)
