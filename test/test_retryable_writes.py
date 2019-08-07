@@ -187,6 +187,7 @@ class TestRetryableWritesMMAPv1(IgnoreDeprecationsTest):
                                  min_heartbeat_interval=0.1)
         cls.knobs.enable()
         cls.client = rs_or_single_client(retryWrites=True)
+        cls.db = cls.client.pymongo_test
 
     @classmethod
     def tearDownClass(cls):
@@ -195,9 +196,7 @@ class TestRetryableWritesMMAPv1(IgnoreDeprecationsTest):
     @client_context.require_version_min(3, 5)
     @client_context.require_no_standalone
     def test_actionable_error_message(self):
-        server_status = self.db.command({'serverStatus': 1})
-        storage_engine = server_status.get('storageEngine', {}).get('name')
-        if storage_engine != 'mmapv1':
+        if client_context.storage_engine != 'mmapv1':
             raise SkipTest('This cluster is not running MMAPv1')
 
         expected_msg = ("This MongoDB deployment does not support retryable "
