@@ -211,8 +211,8 @@ class TestRetryableWritesMMAPv1(IgnoreDeprecationsTest):
 
 class TestRetryableWrites(IgnoreDeprecationsTest):
 
-    @client_context.require_no_mmap
     @classmethod
+    @client_context.require_no_mmap
     def setUpClass(cls):
         super(TestRetryableWrites, cls).setUpClass()
         # Speed up the tests by decreasing the heartbeat frequency.
