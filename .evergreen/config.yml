@@ -1470,8 +1470,10 @@ buildvariants:
         python-version: "*"
       then:
         add_tasks:
-          - ".4.0"
-          - ".3.6"
+          - "test-4.0-standalone"
+          - "test-4.0-replica_set"
+          - "test-3.6-standalone"
+          - "test-3.6-replica_set"
           - "test-3.4-standalone"
           - "test-3.2-standalone"
     - if:
