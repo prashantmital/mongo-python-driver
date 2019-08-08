@@ -77,10 +77,7 @@ Unavoidable breaking changes:
   (e.g. ``MongoClient("mongodb://my.mongodb.cluster/db", retryWrites=False)``)
   to avoid running into :class:`~pymongo.errors.OperationFailure` exceptions
   during write operations. The MMAPv1 storage engine is deprecated and does
-  not support retryable writes which are now turned on by default. This is a
-  breaking change for all applications that use clusters with MMAPv1 and do
-  not explicitly set ``retryWrites=False`` in the connection string or
-  the :class:`~pymongo.mongo_client.MongoClient` constructor.
+  not support retryable writes which are now turned on by default.
 
 .. _URI options specification: https://github.com/mongodb/specifications/blob/master/source/uri-options/uri-options.rst
 
