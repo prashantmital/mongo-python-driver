@@ -623,11 +623,15 @@ class ClientContext(object):
                              func=func)
 
     def supports_transactions(self):
+        if self.storage_engine == 'mmapv1':
+            return False
+
         if self.version.at_least(4, 1, 8):
             return self.is_mongos or self.is_rs
 
         if self.version.at_least(4, 0):
             return self.is_rs
+
         return False
 
     def require_transactions(self, func):

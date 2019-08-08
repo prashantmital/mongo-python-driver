@@ -68,6 +68,20 @@ Version 3.9 adds support for MongoDB 4.2. Highlights include:
 - Connections now survive primary step-down. Applications should expect less
   socket connection turnover during replica set elections.
 
+Unavoidable breaking changes:
+
+- Applications that use MongoDB deployments running the MMAPv1 storage engine
+  must now explicitly disable retryable writes via the connection string
+  (e.g. ``MongoClient("mongodb://my.mongodb.cluster/db?retryWrites=false")``) or
+  the :class:`~pymongo.mongo_client.MongoClient` constructor's keyword argument
+  (e.g. ``MongoClient("mongodb://my.mongodb.cluster/db", retryWrites=False)``)
+  to avoid running into :class:`~pymongo.errors.OperationFailure` exceptions
+  during write operations. The MMAPv1 storage engine does not support
+  retryable writes, which are now turned on by default. This is a breaking
+  change for all applications that use clusters running MMAPv1 and do not
+  explicitly set ``retryWrites=False`` in the connection string or
+  the :class:`~pymongo.mongo_client.MongoClient` constructor.
+
 .. _URI options specification: https://github.com/mongodb/specifications/blob/master/source/uri-options/uri-options.rst
 
 
