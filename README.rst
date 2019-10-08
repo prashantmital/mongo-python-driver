@@ -2,7 +2,10 @@
 PyMongo
 =======
 
-[![Documentation Status](https://readthedocs.org/projects/pymongo/badge/?version=stable)](https://pymongo.readthedocs.io/en/stable/?badge=stable)
+.. image:: https://readthedocs.org/projects/pymongo/badge/?version=stable
+:target: https://pymongo.readthedocs.io/en/stable/?badge=stable
+:alt: Documentation Status
+
 
 :Info: See `the mongo site <http://www.mongodb.org>`_ for more information. See `GitHub <http://github.com/mongodb/mongo-python-driver>`_ for the latest source.
 :Author: Mike Dirolf
