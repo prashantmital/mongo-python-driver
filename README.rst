@@ -1,6 +1,9 @@
 =======
 PyMongo
 =======
+
+[![Documentation Status](https://readthedocs.org/projects/pymongo/badge/?version=stable)](https://pymongo.readthedocs.io/en/stable/?badge=stable)
+
 :Info: See `the mongo site <http://www.mongodb.org>`_ for more information. See `GitHub <http://github.com/mongodb/mongo-python-driver>`_ for the latest source.
 :Author: Mike Dirolf
 :Maintainer: Bernie Hackett <bernie@mongodb.com>
