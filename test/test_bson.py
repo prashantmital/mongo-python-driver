@@ -28,11 +28,13 @@ import sys
 import tempfile
 import uuid
 from collections import OrderedDict, abc
+import pytest
+
 from io import BytesIO
 
 sys.path[0:0] = [""]
 
-from test import qcheck, unittest
+from test import qcheck
 from test.helpers import ExceptionCatchingTask
 
 import bson
@@ -70,6 +72,115 @@ from bson.objectid import ObjectId
 from bson.son import SON
 from bson.timestamp import Timestamp
 from bson.tz_util import FixedOffset, utc
+class _PyAssertMixin:
+    def assertEqual(self, a, b, msg=None):
+        assert a == b, (msg or "")
+    def assertNotEqual(self, a, b, msg=None):
+        assert a != b, (msg or "")
+    def assertTrue(self, expr, msg=None):
+        assert expr, (msg or "")
+    def assertFalse(self, expr, msg=None):
+        assert not expr, (msg or "")
+    def assertIs(self, a, b, msg=None):
+        assert a is b, (msg or "")
+    def assertIsNot(self, a, b, msg=None):
+        assert a is not b, (msg or "")
+    def assertIsNone(self, a, msg=None):
+        assert a is None, (msg or "")
+    def assertIsNotNone(self, a, msg=None):
+        assert a is not None, (msg or "")
+    def assertIn(self, a, b, msg=None):
+        assert a in b, (msg or "")
+    def assertNotIn(self, a, b, msg=None):
+        assert a not in b, (msg or "")
+    def assertGreater(self, a, b, msg=None):
+        assert a > b, (msg or "")
+    def assertGreaterEqual(self, a, b, msg=None):
+        assert a >= b, (msg or "")
+    def assertLess(self, a, b, msg=None):
+        assert a < b, (msg or "")
+    def assertLessEqual(self, a, b, msg=None):
+        assert a <= b, (msg or "")
+    def assertIsInstance(self, obj, typ, msg=None):
+        assert isinstance(obj, typ), (msg or "")
+    def assertAlmostEqual(self, a, b, places=None, msg=None, delta=None):
+        if delta is not None:
+            assert abs(a - b) <= delta, (msg or "")
+        elif places is not None:
+            assert round(abs(a - b), places) == 0, (msg or "")
+        else:
+            assert a == pytest.approx(b), (msg or "")
+    def assertCountEqual(self, a, b, msg=None):
+        assert sorted(a) == sorted(b), (msg or "")
+    def assertRegex(self, text, regex, msg=None):
+        assert re.search(regex, text), (msg or "")
+    def assertNotRegex(self, text, regex, msg=None):
+        assert not re.search(regex, text), (msg or "")
+    def assertRaises(self, expected_exception, *args, **kwargs):
+        kwargs.pop("msg", None)
+        if args:
+            func = args[0]
+            fargs = args[1:]
+            with pytest.raises(expected_exception):
+                func(*fargs, **kwargs)
+            class _NoopCtx:
+                def __enter__(self_inner): return None
+                def __exit__(self_inner, exc_type, exc, tb): return False
+            return _NoopCtx()
+        else:
+            cm = pytest.raises(expected_exception)
+            class _CtxWrapper:
+                def __enter__(self_inner):
+                    self_inner._excinfo = cm.__enter__()
+                    class _Proxy:
+                        def __init__(self_proxy, excinfo): self_proxy._excinfo = excinfo
+                        @property
+                        def exception(self_proxy): return self_proxy._excinfo.value
+                    return _Proxy(self_inner._excinfo)
+                def __exit__(self_inner, *a):
+                    return cm.__exit__(*a)
+            return _CtxWrapper()
+    def assertRaisesRegex(self, expected_exception, regex, *args, **kwargs):
+        kwargs.pop("msg", None)
+        if args:
+            func = args[0]
+            fargs = args[1:]
+            with pytest.raises(expected_exception, match=regex):
+                func(*fargs, **kwargs)
+            class _NoopCtx:
+                def __enter__(self_inner): return None
+                def __exit__(self_inner, exc_type, exc, tb): return False
+            return _NoopCtx()
+        else:
+            cm = pytest.raises(expected_exception, match=regex)
+            class _CtxWrapper:
+                def __enter__(self_inner):
+                    self_inner._excinfo = cm.__enter__()
+                    class _Proxy:
+                        def __init__(self_proxy, excinfo): self_proxy._excinfo = excinfo
+                        @property
+                        def exception(self_proxy): return self_proxy._excinfo.value
+                    return _Proxy(self_inner._excinfo)
+                def __exit__(self_inner, *a):
+                    return cm.__exit__(*a)
+            return _CtxWrapper()
+    def fail(self, msg=""):
+        assert False, (msg or "")
+    def assertWarns(self, expected_warning, *args, **kwargs):
+        if args:
+            func = args[0]
+            fargs = args[1:]
+            with pytest.warns(expected_warning):
+                func(*fargs, **kwargs)
+            class _NoopCtx:
+                def __enter__(self_inner): return None
+                def __exit__(self_inner, exc_type, exc, tb): return False
+            return _NoopCtx()
+        else:
+            return pytest.warns(expected_warning)
+    def assertNotIsInstance(self, obj, typ, msg=None):
+        assert not isinstance(obj, typ), (msg or "")
+
 
 
 class NotADict(abc.MutableMapping):
@@ -127,7 +238,7 @@ class DSTAwareTimezone(datetime.tzinfo):
         return self.__name
 
 
-class TestBSON(unittest.TestCase):
+class TestBSON(_PyAssertMixin):
     def assertInvalid(self, data):
         self.assertRaises(InvalidBSON, decode, data)
 
@@ -681,7 +792,7 @@ class TestBSON(unittest.TestCase):
         d = {"x": datetime.datetime(1993, 4, 4, 2)}
         self.assertEqual(d, decode(encode(d)))
 
-    @unittest.skip("Disabled due to http://bugs.python.org/issue25222")
+    @pytest.mark.skip(reason="Disabled due to http://bugs.python.org/issue25222")
     def test_bad_encode(self):
         evil_list: dict = {"a": []}
         evil_list["a"].append(evil_list)
@@ -1205,7 +1316,7 @@ class TestBSON(unittest.TestCase):
             encode(doc)
 
 
-class TestCodecOptions(unittest.TestCase):
+class TestCodecOptions(_PyAssertMixin):
     def test_document_class(self):
         self.assertRaises(TypeError, CodecOptions, document_class=object)
         self.assertIs(SON, CodecOptions(document_class=SON).document_class)  # type: ignore[type-var]
@@ -1407,7 +1518,7 @@ class TestCodecOptions(unittest.TestCase):
         self.assertTrue(decoded["_id"].generation_time)
 
 
-class TestDatetimeConversion(unittest.TestCase):
+class TestDatetimeConversion(_PyAssertMixin):
     def test_comps(self):
         # Tests other timestamp formats.
         # Test each of the rich comparison methods.
@@ -1676,7 +1787,7 @@ class TestDatetimeConversion(unittest.TestCase):
             _array_of_documents_to_buffer(buf)
 
 
-class TestLongLongToString(unittest.TestCase):
+class TestLongLongToString(_PyAssertMixin):
     def test_long_long_to_string(self):
         try:
             from bson import _cbson
